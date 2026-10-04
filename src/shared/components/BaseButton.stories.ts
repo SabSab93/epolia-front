@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
-import BaseButton from './BaseButton.vue'
+import BaseButton from '@/shared/components/BaseButton.vue'
 
 const meta = {
-  title: 'Base/BaseButton',
+  title: 'Shared/BaseButton',
   component: BaseButton,
   args: {
     label: 'Continuer',

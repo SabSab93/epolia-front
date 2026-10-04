@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
-import HomeView from './HomeView.vue'
+import HomeView from '@/HomeView.vue'
 
 describe('HomeView', () => {
   it('renders the technical welcome screen', () => {

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import BaseButton from '@/components/base/BaseButton.vue'
-import { apiBaseUrl } from '@/services/api'
-import { useAppStatusStore } from '@/stores/appStatus'
+import { getActivePinia } from 'pinia'
+import BaseButton from '@/shared/components/BaseButton.vue'
+import { apiBaseUrl } from '@/shared/api/apiClient'
 
-const appStatus = useAppStatusStore()
+const isPiniaReady = Boolean(getActivePinia())
 </script>
 
 <template>
@@ -26,7 +26,7 @@ const appStatus = useAppStatusStore()
           <div class="rounded-lg border border-slate-200 bg-white p-4">
             <dt class="text-sm font-medium text-slate-500">Pinia</dt>
             <dd class="mt-1 text-lg font-semibold">
-              {{ appStatus.isReady ? 'Store disponible' : 'Store en attente' }}
+              {{ isPiniaReady ? 'Store disponible' : 'Store en attente' }}
             </dd>
           </div>
           <div class="rounded-lg border border-slate-200 bg-white p-4">

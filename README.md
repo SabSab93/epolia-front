@@ -48,6 +48,12 @@ npm run dev
 
 ## Qualite
 
+Les imports internes utilisent exclusivement `@/`, qui correspond a la racine
+`src/`, meme entre fichiers du meme dossier. Exemple :
+`import BaseButton from '@/shared/components/BaseButton.vue'`.
+Cet alias est pris en charge par Vite, TypeScript, Vitest et Storybook.
+ESLint interdit les imports relatifs dans `src/` et `.storybook/`.
+
 ```sh
 npm run typecheck
 npm run lint
@@ -102,14 +108,69 @@ dans `.env.example`.
 
 ```txt
 src/
-  assets/        Styles globaux minimaux
-  components/    Composants reutilisables strictement necessaires
+  shared/
+    api/
+      apiClient.ts
+      apiClient.spec.ts
+    components/
+      BaseButton.vue
+      BaseButton.stories.ts
   router/        Routes Vue Router
-  services/      Services techniques, dont la base API
-  stores/        Stores Pinia
+  assets/        Styles globaux minimaux
   tests/         Setup de tests
-  views/         Ecrans routes
+  App.vue
+  HomeView.vue    Ecran technique d'initialisation
+  HomeView.spec.ts
+  main.ts
 ```
+
+## Architecture par domaine
+
+Le code metier est organise dans `src/domains/<domain>/`. Les domaines suivent
+les responsabilites fonctionnelles du backend : `auth`, `profile`, `student`,
+`discovery`, `messaging`, `missions`, `payments` ou `reviews`, selon les besoins
+reels. Aucun domaine ni sous-dossier vide n'est cree par anticipation.
+L'ecran technique `HomeView.vue` reste a la racine avec le bootstrap ; les futurs
+ecrans metier appartiendront aux `views/` de leur domaine.
+
+Dans chaque domaine, creer uniquement les dossiers necessaires :
+
+- `api/` : appels aux endpoints du domaine, via `@/shared/api/apiClient`.
+- `components/` : composants Vue propres au domaine.
+- `composables/` : logique Vue extraite lorsqu'elle isole une responsabilite
+  significative ou permet une reutilisation.
+- `models/dtos/` : contrats de donnees echanges avec l'API.
+- `models/types/` et `models/enums/` : structures et valeurs propres au domaine,
+  avec une seule source de verite par modele.
+- `stores/` : etat Pinia reellement partage entre composants ou ecrans ; l'etat
+  local reste dans le composant.
+- `views/` : ecrans complets assemblant les composants du domaine.
+
+`shared/` accueille uniquement le code transversal ou clairement destine a
+plusieurs domaines. Les composants specifiques restent dans leur domaine.
+Les stories et les tests sont places a cote du code concerne.
+
+Le client `apiFetch(path, options)` centralise l'URL de base, `fetch`, les headers
+et les erreurs HTTP. Il renvoie une `Response`, y compris pour les reponses sans
+contenu, et conserve les options `RequestInit` (signal, body, credentials, etc.).
+Il fournit `Accept: application/json` par defaut ; le domaine indique le
+`Content-Type` adapte au body. Aucun endpoint metier ni logique de session n'est
+ajoute au client. Les composants Vue ne font pas directement d'appels HTTP.
+
+Exemple de flux pour une future fonctionnalite :
+
+```txt
+domains/auth/views/LoginView.vue
+  -> domains/auth/components/LoginForm.vue
+  -> domains/auth/composables/useLoginForm.ts
+  -> domains/auth/api/useAuthApi.ts
+  -> shared/api/apiClient.ts
+  -> API REST epolia-back
+```
+
+Le composable pourra utiliser `domains/auth/stores/auth.store.ts` pour l'etat de
+session partage. Cette convention ne necessite pas de couches supplementaires
+de repositories, use-cases, adapters ou mappers sans besoin concret.
 
 ## Hooks Git
 
