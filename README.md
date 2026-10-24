@@ -18,8 +18,9 @@ documentation vivent dans des repositories separes.
 - Vitest
 - ESLint, Prettier, Husky et lint-staged
 
-Aucune bibliotheque UI complete n'est installee a ce stade. Ce choix reste a
-arbitrer par l'equipe apres inventaire et comparaison.
+Le socle des composants partages utilise shadcn-vue, Reka UI et Tailwind 4.
+Les composants sont ajoutes au besoin et leur code reste dans le depot.
+Voir [les conventions UI](docs/design-system.md).
 
 ## Prerequis
 
