@@ -5,7 +5,7 @@ import type { HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex min-h-12 min-w-12 max-w-full items-center justify-center gap-epolia-xs rounded-lg border px-epolia-md py-epolia-sm text-epolia-body font-semibold whitespace-normal break-words touch-manipulation transition-colors active:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-epolia-focus focus-visible:ring-offset-2 focus-visible:ring-offset-epolia-page disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none',
+  'inline-flex min-h-12 min-w-12 max-w-full items-center justify-center gap-epolia-xs rounded-lg border px-epolia-md py-epolia-sm text-epolia-body font-semibold whitespace-normal break-words touch-manipulation transition-colors active:transition-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-epolia-focus focus-visible:ring-offset-2 focus-visible:ring-offset-epolia-page disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none',
   {
     variants: {
       variant: {

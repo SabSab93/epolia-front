@@ -57,6 +57,8 @@ proposée : Inter pour les textes, Bricolage Grotesque pour les titres.
 ## Vérifications
 
 Exécuter lint, typecheck, tests et builds application/Storybook.
-**Les WebView Android/iOS ne sont pas encore testées** : vérifier zones sûres,
-clavier, focus, portails et lecteur d’écran, puis noter les plateformes vérifiées.
+**Les WebView Android, iPhone et iPad ne sont pas encore testées** : vérifier
+portrait/paysage, zones sûres, claviers tactile/externe, focus, portails et lecteur
+d’écran. Sur iPad, vérifier aussi le redimensionnement en multitâche et le pointeur.
+Noter les plateformes réellement vérifiées.
 Un build réussi ne prouve ni l’accessibilité ni le fonctionnement natif.

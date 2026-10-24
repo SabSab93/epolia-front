@@ -123,8 +123,12 @@ Storybook. Aucun mode sombre n'est validé.
 - Parcours clavier : ordre logique, focus visible et non masqué par une barre
   fixe. Dialogues : nom accessible, focus géré et rendu au déclencheur à la fermeture.
 - Storybook : trois variantes, désactivé, chargement, texte long, pleine largeur.
-  Puis vérifier sur Android et iOS : toucher, clavier, zones sûres et lecteur
-  d'écran. Toujours indiquer les plateformes non testées ; un build ne prouve
+  Puis vérifier sur Android, iPhone et **iPad** : toucher, clavier, zones sûres
+  et lecteur d'écran. Sur iPad : portrait/paysage, fenêtre redimensionnée en
+  multitâche, clavier externe et navigation au pointeur, en plus du tactile
+  et de VoiceOver. Les contenus doivent rester lisibles sans étirer les lignes
+  ou les boutons sur toute la largeur de la tablette.
+  Toujours indiquer les plateformes non testées ; un build ne prouve
   pas l'accessibilité ni le fonctionnement natif.
 
 ## Sources
