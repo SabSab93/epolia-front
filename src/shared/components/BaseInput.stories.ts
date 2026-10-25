@@ -24,7 +24,7 @@ const meta = {
     readonly: false,
     showLabel: true,
     showHelp: false,
-    showError: true,
+    showError: false,
     help: 'Indiquez votre nom.',
     error: 'Vérifiez votre saisie.',
   },
