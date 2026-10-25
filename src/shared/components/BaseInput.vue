@@ -9,10 +9,11 @@ const props = withDefaults(
     ariaLabel?: string
     clearable?: boolean
     id?: string
-    type?: 'text' | 'email' | 'textarea'
+    type?: 'text' | 'email' | 'date' | 'textarea'
     rows?: number
     name?: string
     autocomplete?: string
+    placeholder?: string
     inputmode?: InputHTMLAttributes['inputmode']
     help?: string
     error?: string
@@ -29,6 +30,7 @@ const props = withDefaults(
     rows: 4,
     name: undefined,
     autocomplete: undefined,
+    placeholder: undefined,
     inputmode: undefined,
     help: undefined,
     error: undefined,
@@ -60,6 +62,7 @@ function controlAttributes() {
     id: inputId.value,
     name: props.name,
     autocomplete: props.autocomplete,
+    placeholder: props.placeholder,
     inputmode: props.inputmode,
     required: props.required,
     disabled: props.disabled,
