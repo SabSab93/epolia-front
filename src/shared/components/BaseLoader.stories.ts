@@ -13,18 +13,17 @@ const meta = {
   component: BaseLoader,
   tags: ['autodocs'],
   args: {
-    variant: 'spinner',
     label: 'Chargement des résultats.',
     loading: true,
     decorative: false,
     buttonVariant: 'default',
   },
   argTypes: {
-    variant: { control: 'select', options: ['spinner', 'linear'] },
     label: { name: 'Libellé', control: 'text' },
     loading: { name: 'Chargement', control: 'boolean' },
     decorative: { name: 'Décoratif', control: 'boolean' },
     buttonVariant: { table: { disable: true } },
+    inheritColor: { table: { disable: true } },
   },
   decorators: [() => ({ template: '<div class="w-full max-w-lg p-epolia-md"><story /></div>' })],
   parameters: {
@@ -32,7 +31,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Deux indicateurs indéterminés, sans pourcentage ni Skeleton. Le libellé reste visible en mode autonome. Garder BaseLoader monté avec loading=false avant de passer à true pour préparer la région status. En mode décoratif, le parent fournit l’information accessible. Le parent gère aria-busy sur la zone concernée ; une annonce immédiate reste hors de cette zone. Aucun délai, appel API ou déplacement du focus. La réduction du mouvement arrête les animations ; garder un texte d’attente visible dans le parent en mode décoratif. Les essais VoiceOver/TalkBack sur appareil restent à effectuer.',
+          'Spinner indéterminé, sans pourcentage ni ligne de Skeleton. Vert Epolia par défaut, même décoratif ; inheritColor permet de reprendre la couleur du parent dans BaseButton. Le libellé reste visible en mode autonome. Garder BaseLoader monté avec loading=false avant de passer à true pour préparer la région status. En mode décoratif, le parent fournit l’information accessible. Le parent gère aria-busy sur la zone concernée ; une annonce immédiate reste hors de cette zone. Aucun délai, appel API ou déplacement du focus. La réduction du mouvement arrête les animations ; garder un texte d’attente visible dans le parent en mode décoratif. Les essais VoiceOver/TalkBack sur appareil restent à effectuer.',
       },
     },
   },
@@ -40,7 +39,6 @@ const meta = {
     components: { BaseLoader },
     setup() {
       const loaderProps = computed(() => ({
-        variant: args.variant,
         label: args.label,
         loading: args.loading,
         decorative: args.decorative,
@@ -58,7 +56,6 @@ export const Default: Story = {}
 export const InControl = {
   name: 'Dans un contrôle',
   argTypes: {
-    variant: { table: { disable: true } },
     label: { table: { disable: true } },
     loading: { table: { disable: true } },
     decorative: { table: { disable: true } },

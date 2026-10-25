@@ -10,9 +10,8 @@ describe('BaseLoader stories', () => {
   it('updates the default story directly from its controls', async () => {
     const args = reactive({ ...meta.args })
     const wrapper = mount(meta.render(args))
-    Object.assign(args, { variant: 'linear', label: 'Chargement du profil.' })
+    Object.assign(args, { label: 'Chargement du profil.' })
     await wrapper.vm.$nextTick()
-    expect(wrapper.getComponent(BaseLoader).props('variant')).toBe('linear')
     expect(wrapper.text()).toBe('Chargement du profil.')
   })
 

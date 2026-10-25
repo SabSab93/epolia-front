@@ -40,7 +40,7 @@ const props = withDefaults(
     :aria-busy="loading || undefined"
     :class="cn(buttonVariants({ variant }), !loading && 'disabled:opacity-50', props.class)"
   >
-    <BaseLoader v-if="loading" decorative class="shrink-0" />
+    <BaseLoader v-if="loading" decorative inherit-color class="shrink-0" />
     <span class="min-w-0">{{ label }}</span>
   </Primitive>
 </template>

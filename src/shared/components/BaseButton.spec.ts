@@ -43,6 +43,7 @@ describe('BaseButton', () => {
     expect(wrapper.attributes('aria-busy')).toBe('true')
     expect(wrapper.text()).toBe('Enregistrer')
     expect(wrapper.findComponent(BaseLoader).props('decorative')).toBe(true)
+    expect(wrapper.findComponent(BaseLoader).props('inheritColor')).toBe(true)
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
     expect(wrapper.classes()).not.toContain('disabled:opacity-50')
     await wrapper.setProps({ loading: false })
