@@ -33,8 +33,17 @@ const meta = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component:
-          'Message intégré et persistant, sans action ni fermeture automatique. message est requis (chaîne vide pour préparer une annonce), title est facultatif et reste un paragraphe. variant ne détermine pas l’urgence. announcement : off par défaut pour un contenu initial, polite pour un résultat non urgent, assertive pour une urgence réelle. Pour tester une annonce, choisir le mode, activer le test dynamique puis afficher le message : garder la région montée avant sa mise à jour. Le texte doit rester compréhensible sans couleur. Ne pas ajouter une seconde région live autour du composant. Les essais VoiceOver/TalkBack natifs restent à effectuer.',
+        component: `Message intégré et persistant, sans action ni fermeture automatique. \`message\` est requis (chaîne vide pour préparer une annonce), \`title\` est facultatif et reste un paragraphe.
+
+Choisir la variante selon le sens du message. Exemples fictifs à adapter au fonctionnement réel :
+- **info** — Information utile : « Complétez votre profil pour présenter vos services. »
+- **success** — Action terminée : « Votre profil a été enregistré. »
+- **warning** — Condition à anticiper : « Votre profil n’est pas encore visible. Complétez les informations obligatoires pour le publier. »
+- **error** — Action échouée : « Votre profil n’a pas pu être enregistré. Réessayez dans quelques instants. »
+
+Les contrôles restent libres : changer la variante ne modifie ni le titre ni le message. Adapter le texte pour qu’il reste compréhensible sans couleur.
+
+\`announcement\` est indépendant de la variante : \`off\` pour un contenu initial, \`polite\` pour un résultat non urgent, \`assertive\` pour une urgence réelle. Pour tester, choisir ce mode, activer le test dynamique puis afficher le message : garder la région montée avant sa mise à jour, sans seconde région live autour du composant. Les essais VoiceOver/TalkBack natifs restent à effectuer.`,
       },
     },
   },
@@ -78,6 +87,6 @@ export const LongText: Story = {
     title: 'Votre profil n’a pas pu être enregistré',
     showTitle: true,
     message:
-      'La connexion au service est temporairement indisponible. Réessayez dans quelques instants.\nSi le problème persiste, contactez l’assistance en précisant l’action que vous souhaitiez effectuer.',
+      'Le service est temporairement indisponible. Réessayez dans quelques instants.\nSi le problème persiste, contactez l’assistance en précisant l’action que vous souhaitiez effectuer.',
   },
 }
