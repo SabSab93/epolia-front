@@ -34,6 +34,18 @@
     var(--color-epolia-page)
   );
   --color-epolia-accent: #e37744;
+  --color-epolia-error: #b42318;
+  --color-epolia-input-disabled: color-mix(
+    in srgb,
+    var(--color-epolia-text) 8%,
+    var(--color-epolia-page)
+  );
+  --color-epolia-input-disabled-border: color-mix(
+    in srgb,
+    var(--color-epolia-text) 50%,
+    var(--color-epolia-page)
+  );
+  --color-epolia-input-readonly: var(--color-epolia-secondary-hover);
   --color-epolia-border: #cbd5e1;
   --color-epolia-focus: var(--color-epolia-text);
 }
@@ -57,7 +69,6 @@
   }
 
   body {
-    min-width: 320px;
     min-height: 100vh;
     margin: 0;
     font-family: var(--font-sans);
