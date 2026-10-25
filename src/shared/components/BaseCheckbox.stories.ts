@@ -1,8 +1,9 @@
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
+import { useArgs } from 'storybook/preview-api'
 import type { Meta, StoryObj } from '@storybook/vue3'
 import BaseCheckbox from '@/shared/components/BaseCheckbox.vue'
 
-type CheckboxStoryArgs = InstanceType<typeof BaseCheckbox>['$props'] & {
+export type CheckboxStoryArgs = InstanceType<typeof BaseCheckbox>['$props'] & {
   showHelp: boolean
   showError: boolean
 }
@@ -41,35 +42,42 @@ const meta = {
       },
     },
   },
-  render: (args) => ({
-    components: { BaseCheckbox },
-    setup() {
-      const value = ref(args.modelValue)
-      watch(
-        () => args.modelValue,
-        (next) => {
-          value.value = next
-        },
-      )
-      const fieldProps = computed(() => {
-        const { showHelp, showError, ...props } = args
-        return {
-          ...props,
-          help: showHelp ? props.help : undefined,
-          error: showError ? props.error : undefined,
+  render: (args) => {
+    const [, updateArgs] = useArgs<CheckboxStoryArgs>()
+    return {
+      components: { BaseCheckbox },
+      setup() {
+        const fieldProps = computed(() => {
+          const { showHelp, showError, ...props } = args
+          return {
+            ...props,
+            help: showHelp ? props.help : undefined,
+            error: showError ? props.error : undefined,
+          }
+        })
+        function updateValue(modelValue: boolean) {
+          updateArgs({ modelValue })
         }
-      })
-      return { fieldProps, value }
-    },
-    template: '<BaseCheckbox v-bind="fieldProps" v-model="value" />',
-  }),
+        return { fieldProps, updateValue }
+      },
+      template: '<BaseCheckbox v-bind="fieldProps" @update:model-value="updateValue" />',
+    }
+  },
 } satisfies Meta<CheckboxStoryArgs>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
-export const Required: Story = { name: 'Obligatoire', args: { required: true } }
+export const Required: Story = {
+  name: 'Obligatoire',
+  args: {
+    required: true,
+    label: 'J’accepte les conditions d’utilisation',
+    help: 'Consultez les conditions avant de les accepter.',
+    error: 'Acceptez les conditions pour continuer.',
+  },
+}
 export const Disabled: Story = { name: 'Désactivé', args: { disabled: true } }
 export const LongLabel: Story = {
   name: 'Texte long',

@@ -66,7 +66,7 @@ function describedBy() {
         />
       </span>
       <span class="min-w-0 py-epolia-sm break-words">
-        {{ label }}<span v-if="required" class="text-epolia-body-small"> (obligatoire)</span>
+        {{ label }}<span v-if="required" aria-hidden="true" class="ms-epolia-2xs">*</span>
       </span>
     </label>
     <div v-if="help || error" class="col-start-2 flex flex-col gap-epolia-2xs">

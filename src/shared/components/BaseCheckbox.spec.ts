@@ -12,13 +12,14 @@ describe('BaseCheckbox', () => {
     const input = wrapper.get('input')
     expect(input.element.type).toBe('checkbox')
     expect(wrapper.get('label').attributes('for')).toBe(input.attributes('id'))
-    expect(wrapper.get('label').text()).toContain('(obligatoire)')
+    expect(wrapper.get('label > span:last-child > span').text()).toBe('*')
+    expect(wrapper.get('label > span:last-child > span').attributes('aria-hidden')).toBe('true')
     expect(input.element.validity.valueMissing).toBe(true)
     await wrapper.setProps({ modelValue: true })
     expect(input.element.validity.valid).toBe(true)
     await wrapper.setProps({ required: false, modelValue: false })
     expect(input.element.validity.valid).toBe(true)
-    expect(wrapper.text()).not.toContain('(obligatoire)')
+    expect(wrapper.text()).not.toContain('*')
   })
 
   it('toggles exactly once from the label or control without submitting', async () => {
