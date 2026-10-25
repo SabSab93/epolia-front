@@ -34,6 +34,7 @@
     var(--color-epolia-page)
   );
   --color-epolia-accent: #e37744;
+  --color-epolia-error: #b42318;
   --color-epolia-border: #cbd5e1;
   --color-epolia-focus: var(--color-epolia-text);
 }
@@ -57,7 +58,6 @@
   }
 
   body {
-    min-width: 320px;
     min-height: 100vh;
     margin: 0;
     font-family: var(--font-sans);
