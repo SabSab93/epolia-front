@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import BaseButton from '@/shared/components/BaseButton.vue'
+import BaseLoader from '@/shared/components/BaseLoader.vue'
 
 describe('BaseButton', () => {
   it('renders a native button without implicitly submitting a form', () => {
@@ -41,7 +42,9 @@ describe('BaseButton', () => {
     const wrapper = mount(BaseButton, { props: { label: 'Enregistrer', loading: true } })
     expect(wrapper.attributes('aria-busy')).toBe('true')
     expect(wrapper.text()).toBe('Enregistrer')
-    expect(wrapper.find('[aria-hidden="true"]').exists()).toBe(true)
+    expect(wrapper.findComponent(BaseLoader).props('decorative')).toBe(true)
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(wrapper.classes()).not.toContain('disabled:opacity-50')
     await wrapper.setProps({ loading: false })
     expect(wrapper.attributes('aria-busy')).toBeUndefined()
     expect((wrapper.element as HTMLButtonElement).disabled).toBe(false)

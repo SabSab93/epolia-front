@@ -3,9 +3,10 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { Primitive } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/utils'
+import BaseLoader from '@/shared/components/BaseLoader.vue'
 
 const buttonVariants = cva(
-  'inline-flex min-h-12 min-w-12 max-w-full items-center justify-center gap-epolia-xs rounded-lg border px-epolia-md py-epolia-sm text-epolia-body font-semibold whitespace-normal break-words touch-manipulation transition-colors active:transition-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-epolia-focus focus-visible:ring-offset-2 focus-visible:ring-offset-epolia-page disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none',
+  'inline-flex min-h-12 min-w-12 max-w-full items-center justify-center gap-epolia-xs rounded-lg border px-epolia-md py-epolia-sm text-epolia-body font-semibold whitespace-normal break-words touch-manipulation transition-colors active:transition-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-epolia-focus focus-visible:ring-offset-2 focus-visible:ring-offset-epolia-page disabled:pointer-events-none motion-reduce:transition-none',
   {
     variants: {
       variant: {
@@ -40,13 +41,9 @@ const props = withDefaults(
     :type="type"
     :disabled="disabled || loading"
     :aria-busy="loading || undefined"
-    :class="cn(buttonVariants({ variant }), props.class)"
+    :class="cn(buttonVariants({ variant }), !loading && 'disabled:opacity-50', props.class)"
   >
-    <span
-      v-if="loading"
-      aria-hidden="true"
-      class="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
-    />
+    <BaseLoader v-if="loading" decorative class="shrink-0" />
     <span class="min-w-0">{{ label }}</span>
   </Primitive>
 </template>
