@@ -87,6 +87,9 @@ Les licences originales accompagnent les fichiers, sans appel à un CDN.
 - Label visible associé à chaque champ ; aide/erreur reliée avec
   `aria-describedby`, `aria-invalid` si nécessaire. Le placeholder ne sert pas de label.
   Choisir `autocomplete`, `inputmode` et le type de clavier adaptés.
+- Champs obligatoires : même astérisque pour BaseInput et BaseCheckbox, avec
+  « Les champs marqués d’un * sont obligatoires » au début du formulaire.
+  Conserver l’attribut natif `required` ; l’étoile est un repère visuel.
 - Garder les saisies après erreur ; expliquer comment corriger et annoncer le
   résultat. Ne pas utiliser uniquement une couleur pour transmettre un état.
 
