@@ -8,6 +8,7 @@ const meta = {
   args: { level: 'h2', default: 'Titre de section' },
   argTypes: {
     level: { control: 'select', options: ['h1', 'h2', 'h3', 'h4'] },
+    default: { name: 'Texte du titre', control: 'text' },
   },
   render: (args) => ({
     components: { BaseTitle },
@@ -28,10 +29,10 @@ export default meta
 
 type Story = StoryObj<typeof meta>
 
-export const Default: Story = {}
-export const Heading1: Story = { args: { level: 'h1', default: 'Titre de page' } }
-export const Heading3: Story = { args: { level: 'h3', default: 'Titre de groupe' } }
-export const Heading4: Story = { args: { level: 'h4', default: 'Titre de sous-groupe' } }
+export const Heading1: Story = { name: 'H1', args: { level: 'h1', default: 'Titre de page' } }
+export const Heading2: Story = { name: 'H2', args: { level: 'h2', default: 'Titre de section' } }
+export const Heading3: Story = { name: 'H3', args: { level: 'h3', default: 'Titre de groupe' } }
+export const Heading4: Story = { name: 'H4', args: { level: 'h4', default: 'Titre de sous-groupe' } }
 export const LongTitle: Story = {
   args: { default: 'Un titre suffisamment long pour vérifier le retour à la ligne sur mobile' },
   decorators: [() => ({ template: '<div class="max-w-64"><story /></div>' })],

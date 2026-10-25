@@ -30,24 +30,8 @@ export default meta
 
 type Story = StoryObj<typeof meta>
 
-export const Default: Story = {}
+export const Primary: Story = {}
 export const Secondary: Story = { args: { variant: 'secondary', label: 'Revenir' } }
 export const Tertiary: Story = { args: { variant: 'tertiary', label: 'Plus tard' } }
 export const Disabled: Story = { args: { disabled: true } }
 export const Loading: Story = { args: { loading: true, label: 'Enregistrement en cours' } }
-export const FullWidth: Story = { args: { class: 'w-full' } }
-export const LongLabel: Story = {
-  args: { label: 'Enregistrer mes informations et continuer vers la prochaine étape' },
-  decorators: [() => ({ template: '<div class="max-w-64"><story /></div>' })],
-}
-
-export const Variants: Story = {
-  render: () => ({
-    components: { BaseButton },
-    template: `<div class="flex max-w-sm flex-col gap-epolia-sm">
-      <BaseButton label="Continuer" />
-      <BaseButton label="Revenir" variant="secondary" />
-      <BaseButton label="Plus tard" variant="tertiary" />
-    </div>`,
-  }),
-}
