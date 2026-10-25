@@ -1,24 +1,53 @@
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Meta, StoryObj } from '@storybook/vue3'
 import BaseInput from '@/shared/components/BaseInput.vue'
-import BaseButton from '@/shared/components/BaseButton.vue'
-import BaseTitle from '@/shared/components/BaseTitle.vue'
+
+type InputStoryArgs = InstanceType<typeof BaseInput>['$props'] & {
+  showLabel: boolean
+  showHelp: boolean
+  showError: boolean
+}
 
 const meta = {
   title: 'Shared/BaseInput',
   component: BaseInput,
   tags: ['autodocs'],
-  args: { modelValue: '', label: 'Nom', type: 'text', clearable: true },
+  args: {
+    modelValue: '',
+    label: 'Nom',
+    ariaLabel: 'Nom',
+    type: 'text',
+    rows: 4,
+    clearable: true,
+    required: false,
+    disabled: false,
+    readonly: false,
+    showLabel: true,
+    showHelp: false,
+    showError: true,
+    help: 'Indiquez votre nom.',
+    error: 'Vérifiez votre saisie.',
+  },
   argTypes: {
-    type: { control: 'select', options: ['text', 'email'] },
+    type: { control: 'select', options: ['text', 'email', 'textarea'] },
+    showLabel: { name: 'Afficher le label', control: 'boolean' },
+    showHelp: { name: 'Afficher l’aide', control: 'boolean' },
+    showError: { name: 'Afficher l’erreur', control: 'boolean' },
+    label: { name: 'Texte du label', control: 'text' },
+    help: { name: 'Texte de l’aide', control: 'text', if: { arg: 'showHelp' } },
+    error: { name: 'Texte de l’erreur', control: 'text', if: { arg: 'showError' } },
+    ariaLabel: { control: 'text', if: { arg: 'showLabel', truthy: false } },
+    required: { control: 'boolean' },
+    disabled: { control: 'boolean' },
+    readonly: { control: 'boolean' },
+    clearable: { control: 'boolean' },
+    rows: { control: { type: 'number', min: 1 }, if: { arg: 'type', eq: 'textarea' } },
     inputmode: {
       control: 'select',
       options: ['text', 'email', 'search', 'tel', 'url', 'numeric', 'decimal', 'none'],
     },
   },
-  decorators: [
-    () => ({ template: '<div class="mx-auto w-full max-w-md p-epolia-md"><story /></div>' }),
-  ],
+  decorators: [() => ({ template: '<div class="w-full max-w-md p-epolia-md"><story /></div>' })],
   render: (args) => ({
     components: { BaseInput },
     setup() {
@@ -29,89 +58,56 @@ const meta = {
           value.value = next
         },
       )
-      return { args, value }
+      const fieldProps = computed(() => {
+        const { showLabel, showHelp, showError, ...props } = args
+        return {
+          ...props,
+          label: showLabel ? props.label : undefined,
+          ariaLabel: showLabel ? undefined : props.ariaLabel,
+          help: showHelp ? props.help : undefined,
+          error: showError ? props.error : undefined,
+        }
+      })
+      return { fieldProps, value }
     },
-    template: '<BaseInput v-bind="args" v-model="value" />',
+    template: '<BaseInput v-bind="fieldProps" v-model="value" />',
   }),
   parameters: {
     layout: 'fullscreen',
     docs: {
       description: {
         component:
-          'Champ texte/email avec v-model (string), label visible recommandé, aide et erreur associées. Sans label visible, fournir ariaLabel. required ajoute une étoile au label ; expliquer « * Champ obligatoire » au niveau du formulaire. clearable est activé par défaut : la croix efface puis rend le focus au champ. Aucune validation métier ni bibliothèque d’icônes. Styles partagés avec l’application ; rendu natif Android/iOS à vérifier.',
+          'Les contrôles permettent d’afficher le label, l’aide et l’erreur et de modifier leur texte. Sans label visible, renseigner ariaLabel. Le textarea utilise 4 lignes par défaut.',
       },
     },
   },
-} satisfies Meta<typeof BaseInput>
+} satisfies Meta<InputStoryArgs>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Text: Story = {}
+export const Default: Story = {}
+export const Text: Story = { name: 'Texte', args: { modelValue: 'Sabrina' } }
+export const Textarea: Story = {
+  name: 'Area',
+  args: {
+    type: 'textarea',
+    label: 'Message',
+    ariaLabel: 'Message',
+    modelValue: 'Bonjour,\nVoici ma demande.',
+    help: 'Vous pouvez écrire sur plusieurs lignes.',
+    error: 'Précisez votre demande.',
+  },
+}
 export const Email: Story = {
   args: {
     label: 'Adresse email',
+    ariaLabel: 'Adresse email',
     type: 'email',
     name: 'email',
     autocomplete: 'email',
     inputmode: 'email',
-  },
-}
-export const WithHelp: Story = {
-  args: { help: 'Utilisez le nom que vous souhaitez afficher sur votre profil.' },
-}
-export const WithError: Story = {
-  args: {
-    modelValue: 'adresse-incomplète',
-    label: 'Adresse email',
-    type: 'email',
     help: 'Exemple : nom@exemple.fr',
     error: 'Saisissez une adresse email complète.',
   },
-}
-export const Required: Story = { args: { required: true, help: '* Champ obligatoire.' } }
-export const Disabled: Story = { args: { modelValue: 'Valeur conservée', disabled: true } }
-export const Readonly: Story = { args: { modelValue: 'Valeur en lecture seule', readonly: true } }
-export const Filled: Story = { args: { modelValue: 'Sabrina' } }
-export const WithoutClear: Story = { args: { modelValue: 'Sabrina', clearable: false } }
-export const WithoutVisibleLabel: Story = {
-  args: {
-    label: undefined,
-    ariaLabel: 'Rechercher une prestation',
-    help: 'Rechercher une prestation par son nom.',
-  },
-}
-export const LongLabel: Story = {
-  args: {
-    label: 'Nom complet de la personne à contacter pour organiser votre prochaine prestation',
-    help: 'Ce texte long doit rester lisible sur un écran étroit et avec une taille de texte agrandie.',
-  },
-}
-
-export const Form: Story = {
-  render: () => ({
-    components: { BaseInput, BaseButton, BaseTitle },
-    setup() {
-      const email = ref('')
-      const submitted = ref(false)
-      function submit() {
-        submitted.value = true
-      }
-      function reset() {
-        email.value = ''
-        submitted.value = false
-      }
-      return { email, submitted, submit, reset }
-    },
-    template: `<form class="flex flex-col gap-epolia-lg" @submit.prevent="submit">
-      <BaseTitle>Exemple de formulaire</BaseTitle>
-      <p class="text-epolia-body-small text-epolia-text-secondary">* Champ obligatoire.</p>
-      <BaseInput v-model="email" label="Adresse email" name="email" type="email" autocomplete="email" inputmode="email" required help="Exemple : nom@exemple.fr" />
-      <div class="flex flex-wrap justify-end gap-epolia-xs">
-        <BaseButton label="Réinitialiser" variant="secondary" @click="reset" />
-        <BaseButton type="submit" label="Continuer" />
-      </div>
-      <p role="status" class="text-epolia-body text-epolia-text">{{ submitted ? 'Formulaire envoyé (démonstration sans appel API).' : '' }}</p>
-    </form>`,
-  }),
 }

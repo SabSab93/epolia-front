@@ -90,27 +90,31 @@ describe('BaseInput', () => {
     expect(wrapper.get('input').element.required).toBe(true)
   })
 
-  it('clears through v-model, returns focus and never submits the form', async () => {
-    const onSubmit = vi.fn()
-    const wrapper = mount(
-      {
-        components: { BaseInput },
-        data: () => ({ value: 'Sabrina' }),
-        methods: { onSubmit },
-        template:
-          '<form @submit.prevent="onSubmit"><BaseInput v-model="value" label="Nom" /></form>',
-      },
-      { attachTo: globalThis.document.body },
-    )
-    const button = wrapper.get('button')
-    expect(button.attributes('type')).toBe('button')
-    expect(button.attributes('aria-label')).toBe('Effacer le champ Nom')
-    await button.trigger('click')
-    expect(wrapper.get('input').element.value).toBe('')
-    expect(wrapper.find('button').exists()).toBe(false)
-    expect(globalThis.document.activeElement).toBe(wrapper.get('input').element)
-    expect(onSubmit).not.toHaveBeenCalled()
-  })
+  it.each(['text', 'textarea'] as const)(
+    'clears %s, returns focus and never submits the form',
+    async (type) => {
+      const onSubmit = vi.fn()
+      const wrapper = mount(
+        {
+          components: { BaseInput },
+          data: () => ({ value: 'Sabrina', type }),
+          methods: { onSubmit },
+          template:
+            '<form @submit.prevent="onSubmit"><BaseInput v-model="value" :type="type" label="Nom" /></form>',
+        },
+        { attachTo: globalThis.document.body },
+      )
+      const button = wrapper.get('button')
+      expect(button.attributes('type')).toBe('button')
+      expect(button.attributes('aria-label')).toBe('Effacer le champ Nom')
+      await button.trigger('click')
+      const field = type === 'textarea' ? wrapper.get('textarea') : wrapper.get('input')
+      expect(field.element.value).toBe('')
+      expect(wrapper.find('button').exists()).toBe(false)
+      expect(globalThis.document.activeElement).toBe(field.element)
+      expect(onSubmit).not.toHaveBeenCalled()
+    },
+  )
 
   it.each([{ disabled: true }, { readonly: true }, { clearable: false }])(
     'does not expose an erase action when %o',
@@ -131,4 +135,55 @@ describe('BaseInput', () => {
     await wrapper.setProps({ modelValue: 'Rempli' })
     expect(wrapper.find('button').exists()).toBe(true)
   })
+
+  it('preserves multiline input, external updates and accessible textarea attributes', async () => {
+    const wrapper = mount(BaseInput, {
+      props: {
+        type: 'textarea',
+        modelValue: '',
+        label: 'Message',
+        name: 'message',
+        id: 'message',
+        required: true,
+        help: 'Votre demande',
+        error: 'Complétez le message.',
+      },
+      attrs: { maxlength: 500, placeholder: 'Votre message' },
+    })
+    const textarea = wrapper.get('textarea')
+    expect(wrapper.find('input').exists()).toBe(false)
+    expect(textarea.element.rows).toBe(4)
+    expect(textarea.element.required).toBe(true)
+    expect(textarea.element.validity.valueMissing).toBe(true)
+    expect(textarea.attributes('name')).toBe('message')
+    expect(textarea.attributes('maxlength')).toBe('500')
+    expect(textarea.attributes('placeholder')).toBe('Votre message')
+    expect(wrapper.get('label').attributes('for')).toBe('message')
+    expect(textarea.attributes('aria-describedby')).toBe('message-help message-error')
+    expect(textarea.attributes('aria-invalid')).toBe('true')
+    await textarea.setValue('Bonjour,\nVoici ma demande.')
+    expect(wrapper.emitted('update:modelValue')).toEqual([['Bonjour,\nVoici ma demande.']])
+    await wrapper.setProps({ modelValue: 'Autre\nmessage', rows: 6 })
+    expect(textarea.element.value).toBe('Autre\nmessage')
+    expect(textarea.element.rows).toBe(6)
+  })
+
+  it.each([{ disabled: true }, { readonly: true }, { clearable: false }])(
+    'keeps textarea content without an erase action when %o',
+    (state) => {
+      const wrapper = mount(BaseInput, {
+        props: {
+          type: 'textarea',
+          modelValue: 'Conservé\nsur deux lignes',
+          label: 'Message',
+          ...state,
+        },
+      })
+      const textarea = wrapper.get('textarea')
+      expect(textarea.element.value).toBe('Conservé\nsur deux lignes')
+      expect(textarea.element.disabled).toBe('disabled' in state)
+      expect(textarea.element.readOnly).toBe('readonly' in state)
+      expect(wrapper.find('button').exists()).toBe(false)
+    },
+  )
 })

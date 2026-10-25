@@ -9,7 +9,8 @@ const props = withDefaults(
     ariaLabel?: string
     clearable?: boolean
     id?: string
-    type?: 'text' | 'email'
+    type?: 'text' | 'email' | 'textarea'
+    rows?: number
     name?: string
     autocomplete?: string
     inputmode?: InputHTMLAttributes['inputmode']
@@ -25,6 +26,7 @@ const props = withDefaults(
     clearable: true,
     id: undefined,
     type: 'text',
+    rows: 4,
     name: undefined,
     autocomplete: undefined,
     inputmode: undefined,
@@ -40,11 +42,31 @@ const model = defineModel<string>({ required: true })
 const generatedId = useId()
 const inputId = computed(() => props.id ?? generatedId)
 const attrs = useAttrs()
-const input = useTemplateRef('input')
+const control = useTemplateRef('control')
+const controlClasses =
+  'min-h-12 min-w-0 flex-1 rounded-lg bg-transparent px-epolia-sm py-epolia-sm text-epolia-body text-epolia-text placeholder:text-epolia-text-secondary focus:outline-none disabled:cursor-not-allowed'
 
 function clear() {
   model.value = ''
-  input.value?.focus()
+  control.value?.focus()
+}
+
+function controlAttributes() {
+  return {
+    ...attrs,
+    id: inputId.value,
+    name: props.name,
+    autocomplete: props.autocomplete,
+    inputmode: props.inputmode,
+    required: props.required,
+    disabled: props.disabled,
+    readonly: props.readonly,
+    'aria-label': props.ariaLabel ?? (attrs['aria-label'] as string | undefined),
+    'aria-describedby': describedBy(),
+    'aria-invalid': props.error
+      ? true
+      : (attrs['aria-invalid'] as InputHTMLAttributes['aria-invalid']),
+  }
 }
 
 function describedBy() {
@@ -70,32 +92,34 @@ function describedBy() {
       {{ label }}<span v-if="required" aria-hidden="true" class="ms-epolia-2xs">*</span>
     </label>
     <div
-      class="flex min-w-0 items-center gap-epolia-xs rounded-lg border border-epolia-primary bg-epolia-surface focus-within:ring-2 focus-within:ring-epolia-focus focus-within:ring-offset-2 focus-within:ring-offset-epolia-page"
+      class="flex min-w-0 items-start gap-epolia-xs rounded-lg border bg-epolia-surface focus-within:outline-2 focus-within:-outline-offset-2"
+      :class="
+        error
+          ? 'border-epolia-error focus-within:outline-epolia-error'
+          : 'border-epolia-primary focus-within:outline-epolia-primary'
+      "
     >
+      <textarea
+        v-if="type === 'textarea'"
+        v-bind="controlAttributes()"
+        ref="control"
+        v-model="model"
+        :rows="rows"
+        :class="[controlClasses, 'resize-y']"
+      />
       <input
-        v-bind="attrs"
-        :id="inputId"
-        ref="input"
+        v-else
+        v-bind="controlAttributes()"
+        ref="control"
         v-model="model"
         :type="type"
-        :name="name"
-        :autocomplete="autocomplete"
-        :inputmode="inputmode"
-        :required="required"
-        :disabled="disabled"
-        :readonly="readonly"
-        :aria-label="ariaLabel ?? (attrs['aria-label'] as string | undefined)"
-        :aria-describedby="describedBy()"
-        :aria-invalid="
-          error ? true : (attrs['aria-invalid'] as InputHTMLAttributes['aria-invalid'])
-        "
-        class="min-h-12 min-w-0 flex-1 rounded-lg bg-transparent px-epolia-sm py-epolia-sm text-epolia-body text-epolia-text placeholder:text-epolia-text-secondary focus:outline-none disabled:cursor-not-allowed"
+        :class="controlClasses"
       />
       <button
         v-if="clearable && model && !disabled && !readonly"
         type="button"
         :aria-label="`Effacer le champ ${label || ariaLabel || attrs['aria-label'] || ''}`.trim()"
-        class="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg text-epolia-body text-epolia-primary hover:bg-epolia-secondary-hover active:bg-epolia-secondary-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-epolia-focus"
+        class="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg text-epolia-body text-epolia-primary hover:bg-epolia-secondary-hover active:bg-epolia-secondary-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-epolia-primary"
         @click="clear"
       >
         <span aria-hidden="true">×</span>
@@ -113,7 +137,7 @@ function describedBy() {
       :id="`${inputId}-error`"
       class="text-epolia-body-small break-words text-epolia-error"
     >
-      <span class="font-semibold">Erreur :</span> {{ error }}
+      Erreur : {{ error }}
     </p>
   </div>
 </template>
