@@ -1,5 +1,8 @@
-import type { Preview } from '@storybook/vue3'
+import { setup, type Preview } from '@storybook/vue3'
+import { configureStorybookApp } from '@/storybook/setup'
 import '@/assets/main.css'
+
+setup(configureStorybookApp)
 
 const preview: Preview = {
   parameters: {
