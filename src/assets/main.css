@@ -35,6 +35,34 @@
   );
   --color-epolia-accent: #e37744;
   --color-epolia-error: #b42318;
+  --color-epolia-alert-info: var(--color-epolia-text);
+  --color-epolia-alert-success: var(--color-epolia-primary);
+  --color-epolia-alert-warning: color-mix(
+    in srgb,
+    var(--color-epolia-accent) 65%,
+    var(--color-epolia-text)
+  );
+  --color-epolia-alert-error: var(--color-epolia-error);
+  --color-epolia-alert-info-surface: color-mix(
+    in srgb,
+    var(--color-epolia-alert-info) 8%,
+    var(--color-epolia-page)
+  );
+  --color-epolia-alert-success-surface: color-mix(
+    in srgb,
+    var(--color-epolia-alert-success) 8%,
+    var(--color-epolia-page)
+  );
+  --color-epolia-alert-warning-surface: color-mix(
+    in srgb,
+    var(--color-epolia-accent) 8%,
+    var(--color-epolia-page)
+  );
+  --color-epolia-alert-error-surface: color-mix(
+    in srgb,
+    var(--color-epolia-alert-error) 8%,
+    var(--color-epolia-page)
+  );
   --color-epolia-input-disabled: color-mix(
     in srgb,
     var(--color-epolia-text) 8%,
