@@ -186,4 +186,62 @@ describe('BaseInput', () => {
       expect(wrapper.find('button').exists()).toBe(false)
     },
   )
+
+  it('describes noneditable states even without a visible label', async () => {
+    const wrapper = mount(BaseInput, {
+      props: { modelValue: 'Valeur conservée', ariaLabel: 'Nom', id: 'name', readonly: true },
+      attrs: { 'aria-describedby': 'external-help' },
+    })
+    const input = wrapper.get('input')
+    expect(wrapper.find('label').exists()).toBe(false)
+    expect(wrapper.get('#name-state').text()).toBe('Lecture seule.')
+    expect(input.attributes('aria-describedby')).toBe('external-help name-state')
+    expect(input.element.readOnly).toBe(true)
+    expect(wrapper.find('button').exists()).toBe(false)
+    await wrapper.setProps({ disabled: true })
+    expect(wrapper.get('#name-state').text()).toBe('Champ désactivé.')
+    expect(input.element.disabled).toBe(true)
+    expect(input.element.value).toBe('Valeur conservée')
+    await wrapper.setProps({ readonly: false, disabled: false })
+    expect(wrapper.find('#name-state').exists()).toBe(false)
+    expect(input.attributes('aria-describedby')).toBe('external-help')
+    expect(wrapper.find('button').exists()).toBe(true)
+  })
+
+  it('keeps the model and clear focus working when the native control type changes', async () => {
+    const wrapper = mount(
+      {
+        components: { BaseInput },
+        data: () => ({ value: 'Texte conservé', type: 'text' }),
+        template: '<BaseInput v-model="value" :type="type" label="Message" />',
+      },
+      { attachTo: globalThis.document.body },
+    )
+    await wrapper.setData({ type: 'textarea' })
+    expect(wrapper.find('input').exists()).toBe(false)
+    expect(wrapper.get('textarea').element.value).toBe('Texte conservé')
+    await wrapper.get('textarea').setValue('Bonjour,\nVoici ma demande.')
+    expect(wrapper.vm.value).toBe('Bonjour,\nVoici ma demande.')
+    await wrapper.get('button').trigger('click')
+    expect(wrapper.vm.value).toBe('')
+    expect(globalThis.document.activeElement).toBe(wrapper.get('textarea').element)
+    await wrapper.setData({ type: 'email', value: 'demo@example.com' })
+    expect(wrapper.get('input').element.type).toBe('email')
+    expect(wrapper.get('input').element.value).toBe('demo@example.com')
+  })
+
+  it('refreshes external ARIA attributes without losing its internal help association', async () => {
+    const wrapper = mount({
+      components: { BaseInput },
+      data: () => ({ description: 'initial-help', invalid: false }),
+      template:
+        '<BaseInput model-value="" id="name" label="Nom" help="Votre nom public" :aria-describedby="description" :aria-invalid="invalid" />',
+    })
+    const input = wrapper.get('input')
+    expect(input.attributes('aria-describedby')).toBe('initial-help name-help')
+    expect(input.attributes('aria-invalid')).toBe('false')
+    await wrapper.setData({ description: 'updated-help', invalid: true })
+    expect(input.attributes('aria-describedby')).toBe('updated-help name-help')
+    expect(input.attributes('aria-invalid')).toBe('true')
+  })
 })

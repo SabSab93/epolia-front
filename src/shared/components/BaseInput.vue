@@ -42,6 +42,9 @@ const model = defineModel<string>({ required: true })
 const generatedId = useId()
 const inputId = computed(() => props.id ?? generatedId)
 const attrs = useAttrs()
+const stateDescription = computed(() =>
+  props.disabled ? 'Champ désactivé.' : props.readonly ? 'Lecture seule.' : undefined,
+)
 const control = useTemplateRef('control')
 const controlClasses =
   'min-h-12 min-w-0 flex-1 rounded-lg bg-transparent px-epolia-sm py-epolia-sm text-epolia-body text-epolia-text placeholder:text-epolia-text-secondary focus:outline-none disabled:cursor-not-allowed'
@@ -73,6 +76,7 @@ function describedBy() {
   return (
     [
       attrs['aria-describedby'],
+      stateDescription.value ? `${inputId.value}-state` : undefined,
       props.help ? `${inputId.value}-help` : undefined,
       props.error ? `${inputId.value}-error` : undefined,
     ]
@@ -92,12 +96,19 @@ function describedBy() {
       {{ label }}<span v-if="required" aria-hidden="true" class="ms-epolia-2xs">*</span>
     </label>
     <div
-      class="flex min-w-0 items-start gap-epolia-xs rounded-lg border bg-epolia-surface focus-within:outline-2 focus-within:-outline-offset-2"
-      :class="
+      class="flex min-w-0 items-start gap-epolia-xs rounded-lg border focus-within:outline-2 focus-within:-outline-offset-2"
+      :class="[
+        disabled
+          ? 'bg-epolia-input-disabled'
+          : readonly
+            ? 'bg-epolia-input-readonly'
+            : 'bg-epolia-surface',
         error
           ? 'border-epolia-error focus-within:outline-epolia-error'
-          : 'border-epolia-primary focus-within:outline-epolia-primary'
-      "
+          : disabled
+            ? 'border-epolia-input-disabled-border'
+            : 'border-epolia-primary focus-within:outline-epolia-primary',
+      ]"
     >
       <textarea
         v-if="type === 'textarea'"
@@ -125,6 +136,13 @@ function describedBy() {
         <span aria-hidden="true">×</span>
       </button>
     </div>
+    <p
+      v-if="stateDescription"
+      :id="`${inputId}-state`"
+      class="text-epolia-body-small text-epolia-text-secondary"
+    >
+      {{ stateDescription }}
+    </p>
     <p
       v-if="help"
       :id="`${inputId}-help`"
