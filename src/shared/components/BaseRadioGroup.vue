@@ -149,9 +149,9 @@ function select(option: RadioOption) {
 
 .radio-option {
   display: grid;
-  grid-template-columns: 3rem minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
   gap: var(--spacing-epolia-xs);
-  min-height: 3rem;
+  min-height: 48px;
   cursor: pointer;
 }
 
@@ -163,8 +163,8 @@ function select(option: RadioOption) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
+  width: 48px;
+  height: 48px;
 }
 
 .radio-content {
@@ -176,8 +176,8 @@ function select(option: RadioOption) {
   appearance: none;
   display: grid;
   place-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 24px;
+  height: 24px;
   margin: 0;
   border: 2px solid var(--color-epolia-primary);
   border-radius: 50%;
@@ -188,8 +188,8 @@ function select(option: RadioOption) {
 
 .radio-control:checked::before {
   content: '';
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: currentColor;
 }
