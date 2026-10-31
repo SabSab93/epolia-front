@@ -133,7 +133,7 @@ function describedBy() {
         v-if="clearable && model && !disabled && !readonly"
         type="button"
         :aria-label="`Effacer le champ ${label || ariaLabel || attrs['aria-label'] || ''}`.trim()"
-        class="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg text-epolia-body text-epolia-primary hover:bg-epolia-secondary-hover active:bg-epolia-secondary-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-epolia-primary"
+        class="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg text-epolia-body text-epolia-primary active:bg-epolia-secondary-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-epolia-primary"
         @click="clear"
       >
         <span aria-hidden="true" class="text-2xl leading-none">×</span>
