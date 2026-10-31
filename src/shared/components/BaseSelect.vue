@@ -1,12 +1,26 @@
 <script setup lang="ts">
 import {
   computed,
+  nextTick,
+  ref,
+  watch,
   useAttrs,
   useId,
   useTemplateRef,
   watchPostEffect,
   type SelectHTMLAttributes,
 } from 'vue'
+
+import {
+  SelectRoot,
+  SelectTrigger,
+  SelectPortal,
+  SelectContent,
+  SelectViewport,
+  SelectItem,
+  SelectItemText,
+  SelectItemIndicator,
+} from 'reka-ui'
 
 defineOptions({ inheritAttrs: false })
 
@@ -28,6 +42,7 @@ const props = withDefaults(
     error?: string
     required?: boolean
     disabled?: boolean
+    clearable?: boolean
   }>(),
   {
     id: undefined,
@@ -38,17 +53,47 @@ const props = withDefaults(
     placeholder: 'Choisir une option',
     required: false,
     disabled: false,
+    clearable: false,
   },
 )
 
 const model = defineModel<string>({ required: true })
 const attrs = useAttrs()
+const trigger = useTemplateRef<InstanceType<typeof SelectTrigger>>('trigger')
+const invalid = ref(false)
+const displayedError = computed(
+  () => props.error || (invalid.value ? 'Choisissez une option.' : undefined),
+)
+function onInvalid(event: globalThis.Event) {
+  event.preventDefault()
+  invalid.value = true
+  const element = control.value
+  const firstInvalid = Array.from(element?.form?.elements ?? []).find((field) => {
+    const candidate = field as globalThis.HTMLInputElement
+    return candidate.willValidate && !candidate.validity.valid
+  })
+  if (firstInvalid && firstInvalid !== element) return
+  // Let the browser finish validation before restoring focus to the visible control.
+  globalThis.setTimeout(() => {
+    if (invalid.value && control.value === element) trigger.value?.$el.focus()
+  }, 0)
+}
 const generatedId = useId()
 const inputId = computed(() => props.id ?? generatedId)
 const control = useTemplateRef<globalThis.HTMLSelectElement>('control')
 const selectedOption = computed(() => props.options.find((option) => option.value === model.value))
 const unavailable = computed(() => !props.options.some((option) => !option.disabled))
 const isDisabled = computed(() => props.disabled || unavailable.value)
+const showClear = computed(() => props.clearable && selectedOption.value && !isDisabled.value)
+async function clearSelection() {
+  if (!showClear.value) return
+  model.value = ''
+  await nextTick()
+  trigger.value?.$el.focus()
+}
+watch([model, () => props.required, isDisabled], () => {
+  invalid.value = false
+})
 const unavailableMessage = computed(() =>
   !props.options.length
     ? 'Aucune option disponible.'
@@ -74,13 +119,26 @@ const selection = computed({
   },
 })
 
+// Reka reserves the empty string: use an internal value that cannot collide with options.
+const emptyValue = computed(() => {
+  let value = '__epolia_empty__'
+  while (props.options.some((option) => option.value === value)) value += '_'
+  return value
+})
+const menuSelection = computed({
+  get: () => selection.value || emptyValue.value,
+  set: (value: string) => {
+    selection.value = value === emptyValue.value ? '' : value
+  },
+})
+
 function describedBy() {
   return (
     [
       attrs['aria-describedby'],
       props.help && `${inputId.value}-help`,
       stateDescription.value && `${inputId.value}-state`,
-      props.error && `${inputId.value}-error`,
+      displayedError.value && `${inputId.value}-error`,
     ]
       .filter(Boolean)
       .join(' ') || undefined
@@ -96,7 +154,10 @@ watchPostEffect((onCleanup) => {
     if (event.target !== element.form) return
     // Wait for the browser to complete the native reset default action.
     globalThis.setTimeout(() => {
-      if (!event.defaultPrevented && control.value === element) model.value = element.value
+      if (!event.defaultPrevented && control.value === element) {
+        model.value = element.value
+        invalid.value = false
+      }
     }, 0)
   }
   root.addEventListener('reset', reset, true)
@@ -109,35 +170,82 @@ watchPostEffect((onCleanup) => {
     <label :for="inputId" class="text-epolia-body font-semibold">
       {{ label }}<span v-if="required" aria-hidden="true" class="ms-epolia-2xs">*</span>
     </label>
-    <div class="select-surface" :class="{ 'select-invalid': error }">
-      <span aria-hidden="true" class="select-value">{{ selectedOption?.label ?? emptyLabel }}</span>
-      <span aria-hidden="true" class="select-arrow" />
-      <select
-        v-bind="attrs"
-        :id="inputId"
-        ref="control"
-        v-model="selection"
-        :name="name"
-        :form="form"
-        :required="required"
-        :disabled="isDisabled"
-        :aria-describedby="describedBy()"
-        :aria-invalid="
-          error ? true : (attrs['aria-invalid'] as SelectHTMLAttributes['aria-invalid'])
-        "
-        class="select-native"
+    <SelectRoot v-model="menuSelection" :disabled="isDisabled" :required="required">
+      <div
+        class="select-control"
+        :class="{ 'select-invalid': displayedError, 'select-disabled': isDisabled }"
       >
-        <option value="" :disabled="required" selected>{{ emptyLabel }}</option>
-        <option
-          v-for="option in options"
-          :key="option.value"
-          :value="option.value"
-          :disabled="option.disabled"
+        <SelectTrigger
+          v-bind="attrs"
+          :id="inputId"
+          ref="trigger"
+          :aria-describedby="describedBy()"
+          :aria-invalid="
+            displayedError ? true : (attrs['aria-invalid'] as SelectHTMLAttributes['aria-invalid'])
+          "
+          class="select-surface"
+          :class="{ 'select-has-clear': showClear }"
         >
-          {{ option.label }}
-        </option>
-      </select>
-    </div>
+          <span class="select-value" :class="{ 'select-placeholder': !selectedOption }">{{
+            selectedOption?.label ?? emptyLabel
+          }}</span>
+          <span aria-hidden="true" class="select-arrow" />
+        </SelectTrigger>
+        <button
+          v-if="showClear"
+          type="button"
+          class="select-clear"
+          :aria-label="`Effacer la sélection : ${label}`"
+          @click="clearSelection"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <SelectPortal>
+        <SelectContent position="popper" :side-offset="8" class="epolia-select-menu">
+          <SelectViewport>
+            <SelectItem v-if="!required" :value="emptyValue" class="select-option">
+              <SelectItemText>{{ placeholder }}</SelectItemText>
+              <SelectItemIndicator class="select-check" aria-hidden="true">✓</SelectItemIndicator>
+            </SelectItem>
+            <SelectItem
+              v-for="option in options"
+              :key="option.value"
+              :value="option.value"
+              :disabled="option.disabled"
+              class="select-option"
+            >
+              <SelectItemText>{{ option.label }}</SelectItemText>
+              <SelectItemIndicator class="select-check" aria-hidden="true">✓</SelectItemIndicator>
+            </SelectItem>
+          </SelectViewport>
+        </SelectContent>
+      </SelectPortal>
+    </SelectRoot>
+    <!-- Form transport only: Reka owns all interaction; keep external form/reset support. -->
+    <select
+      ref="control"
+      v-model="selection"
+      :name="name"
+      :form="form"
+      :required="required"
+      :disabled="isDisabled"
+      :autocomplete="attrs.autocomplete as string"
+      tabindex="-1"
+      aria-hidden="true"
+      class="select-native"
+      @invalid="onInvalid"
+    >
+      <option value="" :disabled="required" selected>{{ emptyLabel }}</option>
+      <option
+        v-for="option in options"
+        :key="option.value"
+        :value="option.value"
+        :disabled="option.disabled"
+      >
+        {{ option.label }}
+      </option>
+    </select>
     <p
       v-if="help"
       :id="`${inputId}-help`"
@@ -152,8 +260,12 @@ watchPostEffect((onCleanup) => {
     >
       {{ stateDescription }}
     </p>
-    <p v-if="error" :id="`${inputId}-error`" class="text-epolia-body-small text-epolia-error">
-      Erreur : {{ error }}
+    <p
+      v-if="displayedError"
+      :id="`${inputId}-error`"
+      class="text-epolia-body-small text-epolia-error"
+    >
+      Erreur : {{ displayedError }}
     </p>
   </div>
 </template>
@@ -168,8 +280,68 @@ watchPostEffect((onCleanup) => {
   overflow-wrap: anywhere;
 }
 
-.select-surface {
+.select-control {
   position: relative;
+  min-width: 0;
+  border: 1px solid var(--color-epolia-primary);
+  border-radius: var(--radius);
+  background: var(--color-epolia-surface);
+}
+
+.select-control:focus-within,
+.select-control:has([data-state='open']) {
+  outline: 2px solid var(--color-epolia-primary);
+  outline-offset: -2px;
+}
+
+.select-invalid {
+  border-color: var(--color-epolia-error);
+}
+
+.select-invalid:focus-within,
+.select-invalid:has([data-state='open']) {
+  outline-color: var(--color-epolia-error);
+}
+
+.select-disabled {
+  border-color: var(--color-epolia-input-disabled-border);
+  background: var(--color-epolia-input-disabled);
+}
+
+.select-clear {
+  position: absolute;
+  inset-inline-end: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  color: var(--color-epolia-primary);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.select-clear:hover {
+  background: var(--color-epolia-secondary-hover);
+}
+
+.select-clear:active {
+  background: var(--color-epolia-secondary-active);
+}
+
+.select-clear:focus-visible {
+  outline: 2px solid var(--color-epolia-primary);
+  outline-offset: 2px;
+}
+
+.select-has-clear .select-value {
+  padding-inline-end: calc(48px + var(--spacing-epolia-xs));
+}
+
+.select-surface {
+  width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -177,26 +349,25 @@ watchPostEffect((onCleanup) => {
   min-height: 48px;
   min-width: 48px;
   padding: var(--spacing-epolia-sm);
-  border: 1px solid var(--color-epolia-primary);
   border-radius: var(--radius);
-  background: var(--color-epolia-surface);
+  background: transparent;
   font-family: var(--font-epolia-body);
   font-size: var(--text-epolia-body);
   line-height: var(--text-epolia-body--line-height);
+  text-align: start;
+  cursor: pointer;
 }
 
-.select-surface:has(select:focus-visible) {
-  outline: 2px solid var(--color-epolia-focus);
-  outline-offset: 2px;
+.select-surface:focus-visible {
+  outline: none;
 }
 
-.select-invalid {
-  border-color: var(--color-epolia-error);
+.select-surface:disabled {
+  cursor: not-allowed;
 }
 
-.select-surface:has(select:disabled) {
-  border-color: var(--color-epolia-input-disabled-border);
-  background: var(--color-epolia-input-disabled);
+.select-placeholder {
+  color: var(--color-epolia-text-secondary);
 }
 
 .select-value {
@@ -213,39 +384,66 @@ watchPostEffect((onCleanup) => {
   transform: translateY(-0.125rem) rotate(45deg);
 }
 
-/* The only interactive control covers exactly its visible, multiline surface. */
+/* Native form transport stays out of the interaction and accessibility trees. */
 .select-native {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-  font: inherit;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
 }
 
-.select-native:disabled {
+:global(.epolia-select-menu) {
+  z-index: 50;
+  width: var(--reka-select-trigger-width);
+  max-width: calc(100vw - 2 * var(--spacing-epolia-md));
+  max-height: var(--reka-select-content-available-height);
+  overflow-y: auto;
+  border: 1px solid var(--color-epolia-primary);
+  border-radius: var(--radius);
+  background: var(--color-epolia-surface);
+  color: var(--color-epolia-text);
+  padding: var(--spacing-epolia-2xs);
+  font-family: var(--font-epolia-body);
+  font-size: var(--text-epolia-body);
+  line-height: var(--text-epolia-body--line-height);
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-epolia-xs);
+  min-height: 48px;
+  padding: var(--spacing-epolia-sm);
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.select-option[data-highlighted] {
+  outline: none;
+  background: var(--color-epolia-secondary-hover);
+}
+
+.select-option[data-disabled] {
+  color: var(--color-epolia-text-secondary);
   cursor: not-allowed;
 }
 
+.select-check {
+  flex-shrink: 0;
+  color: var(--color-epolia-primary);
+}
+
 @media (forced-colors: active) {
-  .select-value,
-  .select-arrow {
-    display: none;
+  .select-option[data-highlighted] {
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
   }
-
-  .select-native {
-    position: static;
-    grid-column: 1 / -1;
-    min-width: 0;
-    min-height: 48px;
-    opacity: 1;
-    appearance: auto;
-  }
-
-  .select-surface:has(select:focus-visible) {
-    outline-color: Highlight;
+  .select-check {
+    color: currentColor;
   }
 }
 </style>

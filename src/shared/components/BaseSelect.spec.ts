@@ -1,5 +1,6 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { SelectRoot } from 'reka-ui'
 import BaseSelect from '@/shared/components/BaseSelect.vue'
 
 const options = [
@@ -15,13 +16,139 @@ async function settleReset() {
 }
 
 describe('BaseSelect', () => {
+  it('only shows the clear button for an enabled, clearable selection', async () => {
+    const wrapper = mount(BaseSelect, {
+      props: { label: 'Fréquence', options, modelValue: 'weekly' },
+    })
+    expect(wrapper.find('button.select-clear').exists()).toBe(false)
+    await wrapper.setProps({ clearable: true })
+    expect(wrapper.get('button.select-clear').attributes('aria-label')).toBe(
+      'Effacer la sélection : Fréquence',
+    )
+    expect(wrapper.get('button.select-clear').attributes('type')).toBe('button')
+    expect(wrapper.get('button.select-clear').element.closest('[role=combobox]')).toBeNull()
+    await wrapper.setProps({ disabled: true })
+    expect(wrapper.find('button.select-clear').exists()).toBe(false)
+    await wrapper.setProps({ disabled: false, modelValue: '' })
+    expect(wrapper.find('button.select-clear').exists()).toBe(false)
+  })
+
+  it('clears a required selection without submitting or opening the menu, then restores focus', async () => {
+    const submit = vi.fn()
+    const wrapper = mount(
+      {
+        components: { BaseSelect },
+        data: () => ({ value: 'weekly', options }),
+        methods: { submit },
+        template:
+          '<form @submit.prevent="submit"><BaseSelect v-model="value" name="frequency" label="Fréquence" :options="options" required clearable /></form>',
+      },
+      { attachTo: document.body },
+    )
+    await wrapper.get('button.select-clear').trigger('click')
+    await flushPromises()
+    expect(wrapper.vm.value).toBe('')
+    expect(wrapper.get('select').element.value).toBe('')
+    expect(new FormData(wrapper.get('form').element).get('frequency')).toBe('')
+    expect(wrapper.get('select').element.validity.valueMissing).toBe(true)
+    expect(wrapper.get('[role=combobox]').attributes('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(wrapper.get('[role=combobox]').element)
+    expect(wrapper.find('button.select-clear').exists()).toBe(false)
+    expect(submit).not.toHaveBeenCalled()
+  })
+
+  it('maps menu choices and clearing without exposing an internal placeholder value', async () => {
+    const wrapper = mount(BaseSelect, {
+      props: {
+        label: 'Fréquence',
+        modelValue: '',
+        options: [...options, { value: '__epolia_empty__', label: 'Une vraie valeur' }],
+        'onUpdate:modelValue': (value: string) => wrapper.setProps({ modelValue: value }),
+      },
+    })
+    const menu = wrapper.getComponent(SelectRoot)
+    const emptyValue = (menu.vm.$props as { modelValue: string }).modelValue
+    expect(emptyValue).not.toBe('__epolia_empty__')
+    menu.vm.$emit('update:modelValue', '__epolia_empty__')
+    await flushPromises()
+    expect(wrapper.get('select').element.value).toBe('__epolia_empty__')
+    expect(wrapper.get('[role=combobox]').text()).toBe('Une vraie valeur')
+    menu.vm.$emit('update:modelValue', emptyValue)
+    await flushPromises()
+    expect(wrapper.props('modelValue')).toBe('')
+    expect(wrapper.get('select').element.value).toBe('')
+    menu.vm.$emit('update:modelValue', 'daily')
+    await flushPromises()
+    expect(wrapper.props('modelValue')).toBe('')
+  })
+
+  it('focuses the visible trigger and explains failed native validation', async () => {
+    const wrapper = mount(BaseSelect, {
+      attachTo: document.body,
+      props: { label: 'Fréquence', options, modelValue: '', required: true },
+    })
+    const select = wrapper.get('select')
+    expect(select.element.reportValidity()).toBe(false)
+    await settleReset()
+    expect(document.activeElement).toBe(wrapper.get('[role=combobox]').element)
+    expect(wrapper.get('[role=combobox]').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.text()).toContain('Erreur : Choisissez une option.')
+    await wrapper.setProps({ required: false })
+    expect(wrapper.get('[role=combobox]').attributes('aria-invalid')).toBeUndefined()
+    await wrapper.setProps({ required: true })
+    select.element.reportValidity()
+    await flushPromises()
+    await wrapper.setProps({ modelValue: 'weekly' })
+    expect(select.element.validity.valid).toBe(true)
+    expect(wrapper.get('[role=combobox]').attributes('aria-invalid')).toBeUndefined()
+  })
+
+  it('focuses the first invalid field when several selects fail validation', async () => {
+    const wrapper = mount(
+      {
+        components: { BaseSelect },
+        data: () => ({ first: '', second: '', options }),
+        template: `<form>
+        <BaseSelect id="first" v-model="first" label="Premier" :options="options" required />
+        <BaseSelect id="second" v-model="second" label="Second" :options="options" required />
+      </form>`,
+      },
+      { attachTo: document.body },
+    )
+    expect(wrapper.get('form').element.reportValidity()).toBe(false)
+    await settleReset()
+    expect(document.activeElement).toBe(wrapper.get('#first').element)
+    expect(wrapper.findAll('[aria-invalid=true]')).toHaveLength(2)
+  })
+
+  it('clears a validation error on reset even when the empty model is unchanged', async () => {
+    const wrapper = mount(
+      {
+        components: { BaseSelect },
+        data: () => ({ value: '', options }),
+        template:
+          '<form><BaseSelect v-model="value" label="Fréquence" :options="options" required /></form>',
+      },
+      { attachTo: document.body },
+    )
+    wrapper.get('select').element.reportValidity()
+    await flushPromises()
+    expect(wrapper.text()).toContain('Erreur : Choisissez une option.')
+    wrapper.get('form').element.reset()
+    await settleReset()
+    expect(wrapper.vm.value).toBe('')
+    expect(wrapper.text()).not.toContain('Erreur :')
+    expect(wrapper.get('[role=combobox]').attributes('aria-invalid')).toBeUndefined()
+  })
+
   it('starts empty, follows parent values and keeps the complete decorative value synchronized', async () => {
     const wrapper = mount(BaseSelect, { props: { label: 'Fréquence', options, modelValue: '' } })
     const select = wrapper.get('select')
     expect(select.element.value).toBe('')
     expect(wrapper.get('.select-value').text()).toBe('Choisir une option')
-    expect(wrapper.get('.select-value').attributes('aria-hidden')).toBe('true')
-    expect(wrapper.get('label').attributes('for')).toBe(select.attributes('id'))
+    expect(wrapper.get('label').attributes('for')).toBe(
+      wrapper.get('[role=combobox]').attributes('id'),
+    )
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
     await wrapper.setProps({ modelValue: 'monthly' })
     expect(select.element.value).toBe('monthly')
@@ -90,17 +217,18 @@ describe('BaseSelect', () => {
       attrs: { 'aria-describedby': 'external', onBlur: blur, autocomplete: 'off' },
     })
     const select = wrapper.get('select')
+    const trigger = wrapper.get('[role=combobox]')
     expect(select.element.validity.valueMissing).toBe(true)
     expect(wrapper.get('label span').attributes('aria-hidden')).toBe('true')
-    expect(select.attributes('aria-describedby')).toBe('external frequency-help frequency-error')
-    expect(select.attributes('aria-invalid')).toBe('true')
+    expect(trigger.attributes('aria-describedby')).toBe('external frequency-help frequency-error')
+    expect(trigger.attributes('aria-invalid')).toBe('true')
     expect(select.attributes('autocomplete')).toBe('off')
     expect(wrapper.get('option').element.disabled).toBe(true)
-    await select.trigger('blur')
+    await trigger.trigger('blur')
     expect(blur).toHaveBeenCalledOnce()
     await wrapper.setProps({ modelValue: 'weekly', error: undefined })
     expect(select.element.validity.valid).toBe(true)
-    expect(select.attributes('aria-invalid')).toBeUndefined()
+    expect(trigger.attributes('aria-invalid')).toBeUndefined()
     expect(wrapper.get('.select-value').text()).toBe('Chaque semaine')
   })
 
@@ -117,7 +245,9 @@ describe('BaseSelect', () => {
       { attachTo: document.body },
     )
     const selects = wrapper.findAll('select')
-    expect(selects[0]!.attributes('id')).not.toBe(selects[1]!.attributes('id'))
+    expect(wrapper.findAll('[role=combobox]')[0]!.attributes('id')).not.toBe(
+      wrapper.findAll('[role=combobox]')[1]!.attributes('id'),
+    )
     await selects[0]!.setValue('weekly')
     await selects[1]!.setValue('monthly')
     const form = wrapper.get('form').element

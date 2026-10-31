@@ -27,6 +27,7 @@ const meta = {
     ],
     required: false,
     disabled: false,
+    clearable: true,
     showHelp: false,
     showError: false,
     empty: false,
@@ -40,6 +41,7 @@ const meta = {
     placeholder: { control: 'text' },
     required: { control: 'boolean' },
     disabled: { control: 'boolean' },
+    clearable: { name: 'Effacement par la croix', control: 'boolean' },
     empty: { name: 'Liste vide', control: 'boolean' },
     testForm: { name: 'Tester le formulaire', control: 'boolean' },
     showHelp: { name: 'Afficher l’aide', control: 'boolean' },
@@ -53,7 +55,7 @@ const meta = {
     docs: {
       description: {
         component:
-          '`<BaseSelect v-model="frequency" label="Fréquence" :options="options" />`. Modèle string fourni par le parent ; chaîne vide = absence de choix. Options en lecture seule : value unique/non vide, label et disabled?. id/name/form/placeholder/help/error/required/disabled optionnels ; attributs et événements natifs transmis au select. Une option retirée ne remplace pas le modèle parent ; le formulaire doit corriger une valeur devenue indisponible. La liste vide ou entièrement indisponible désactive le champ. Le choix vide reste sélectionnable si facultatif. Le formulaire explique l’astérisque et gère les messages de validation. Un reset natif répercute la valeur réinitialisée dans le modèle. Le vrai select assure clavier/menu OS et formulaire ; une surface aria-hidden montre sa valeur sur plusieurs lignes. En couleurs forcées, le select natif redevient visible. Les options du menu restent rendues par l’OS : vérifier les libellés réels avant sélection sur Android/iOS/iPadOS, notamment ceux qui ne diffèrent qu’à la fin. Reka a été évalué ; il n’est pas nécessaire pour ce comportement natif. Aucun menu ARIA fait main, autocomplétion distante ou multisélection.',
+          '`<BaseSelect v-model="frequency" label="Fréquence" :options="options" />`. Modèle string contrôlé ; chaîne vide = aucun choix. Options : value unique/non vide, label, disabled?. id/name/form/placeholder/help/error/required/disabled optionnels. Reka gère le menu, le clavier et le focus ; survol et parcours clavier utilisent le vert dérivé Epolia, la coche indique le choix confirmé. Les attributs et événements sont transmis au déclencheur. Un select masqué assure la soumission, la validation et le reset natifs, y compris avec form externe. Une valeur retirée ne remplace pas le modèle parent. Liste vide ou entièrement indisponible : champ désactivé. Le choix vide est proposé si facultatif. clearable (false par défaut) ajoute une croix si une valeur est sélectionnée et le champ actif ; elle vide le modèle et rend le focus au champ. Un champ obligatoire vidé reste à renseigner avant soumission. Le formulaire explique l’astérisque. Deux stories configurables ; aucun multiselect ni recherche distante. Essais Android/iOS et lecteurs d’écran mobiles à effectuer.',
       },
     },
   },

@@ -136,7 +136,7 @@ function describedBy() {
         class="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg text-epolia-body text-epolia-primary hover:bg-epolia-secondary-hover active:bg-epolia-secondary-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-epolia-primary"
         @click="clear"
       >
-        <span aria-hidden="true">×</span>
+        <span aria-hidden="true" class="text-2xl leading-none">×</span>
       </button>
     </div>
     <p
