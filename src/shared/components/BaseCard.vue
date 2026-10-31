@@ -36,6 +36,7 @@ defineSlots<{
 
   .base-card-content {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--spacing-epolia-xs);
     min-width: 0;
   }
