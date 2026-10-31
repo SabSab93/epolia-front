@@ -52,6 +52,33 @@ describe('BaseLoader', () => {
     expect(document.activeElement).toBe(button.element)
   })
 
+  it('keeps an accessible label when only the spinner is visible', async () => {
+    const wrapper = mount(BaseLoader, {
+      props: { loading: false, showLabel: false, label: 'Chargement du profil.' },
+    })
+    const region = wrapper.element
+    expect(wrapper.text()).toBe('')
+    await wrapper.setProps({ loading: true })
+    const label = wrapper.get('.sr-only').element
+    expect(wrapper.element).toBe(region)
+    expect(wrapper.attributes('role')).toBe('status')
+    expect(wrapper.attributes('aria-atomic')).toBe('true')
+    expect(wrapper.attributes('aria-hidden')).toBeUndefined()
+    expect(wrapper.text()).toBe('Chargement du profil.')
+    expect(wrapper.findAll('[role]')).toHaveLength(1)
+    await wrapper.setProps({ showLabel: true })
+    expect(wrapper.element.contains(label)).toBe(true)
+    expect(wrapper.find('.sr-only').exists()).toBe(false)
+    expect(wrapper.text()).toBe('Chargement du profil.')
+    await wrapper.setProps({ decorative: true })
+    expect(wrapper.attributes('role')).toBeUndefined()
+    expect(wrapper.attributes('aria-hidden')).toBe('true')
+    expect(wrapper.text()).toBe('')
+    await wrapper.setProps({ loading: false })
+    expect(wrapper.element).toBe(region)
+    expect(wrapper.text()).toBe('')
+  })
+
   it('keeps green independently of decoration and inherits color only when requested', async () => {
     const wrapper = mount(BaseLoader)
     expect(wrapper.classes()).toContain('text-epolia-primary')

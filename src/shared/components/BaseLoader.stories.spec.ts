@@ -13,6 +13,13 @@ describe('BaseLoader stories', () => {
     Object.assign(args, { label: 'Chargement du profil.' })
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toBe('Chargement du profil.')
+    Object.assign(args, { showLabel: false })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[role="status"] .sr-only').text()).toBe('Chargement du profil.')
+    Object.assign(args, { decorative: true })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(wrapper.text()).toBe('')
   })
 
   it.each(['success', 'error'] as const)(
