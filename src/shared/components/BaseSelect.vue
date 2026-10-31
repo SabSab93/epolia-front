@@ -323,10 +323,6 @@ watchPostEffect((onCleanup) => {
   cursor: pointer;
 }
 
-.select-clear:hover {
-  background: var(--color-epolia-secondary-hover);
-}
-
 .select-clear:active {
   background: var(--color-epolia-secondary-active);
 }
