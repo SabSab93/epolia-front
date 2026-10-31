@@ -87,18 +87,20 @@ function describedBy() {
   )
 }
 
-// A native reset does not emit change; keep the decorative value synchronized.
+// Native resets do not emit change; form association can also change after mount.
 watchPostEffect((onCleanup) => {
   const element = control.value
-  const form = props.form ? element?.ownerDocument.getElementById(props.form) : element?.form
-  if (!form || form.tagName !== 'FORM') return
-  function reset(event: globalThis.Event) {
-    globalThis.queueMicrotask(() => {
-      if (!event.defaultPrevented && control.value) model.value = control.value.value
-    })
+  if (!element) return
+  const root = element.ownerDocument
+  const reset = (event: globalThis.Event) => {
+    if (event.target !== element.form) return
+    // Wait for the browser to complete the native reset default action.
+    globalThis.setTimeout(() => {
+      if (!event.defaultPrevented && control.value === element) model.value = element.value
+    }, 0)
   }
-  form.addEventListener('reset', reset)
-  onCleanup(() => form.removeEventListener('reset', reset))
+  root.addEventListener('reset', reset, true)
+  onCleanup(() => root.removeEventListener('reset', reset, true))
 })
 </script>
 

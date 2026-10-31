@@ -80,6 +80,7 @@ const meta = {
         return { args, fieldProps, updateValue, feedback, submit }
       },
       template: `<form class="flex min-w-0 flex-col gap-epolia-md" @submit.prevent="submit" @reset="feedback = ''">
+        <p v-if="args.required" class="text-epolia-body-small text-epolia-text-secondary">Les champs marqués d’un * sont obligatoires.</p>
         <BaseSelect v-bind="fieldProps" @update:model-value="updateValue" />
         <div v-if="args.testForm" class="flex flex-wrap gap-epolia-xs">
           <BaseButton label="Valider" type="submit" />

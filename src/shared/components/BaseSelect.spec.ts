@@ -9,6 +9,11 @@ const options = [
 ]
 enableAutoUnmount(afterEach)
 
+async function settleReset() {
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  await flushPromises()
+}
+
 describe('BaseSelect', () => {
   it('starts empty, follows parent values and keeps the complete decorative value synchronized', async () => {
     const wrapper = mount(BaseSelect, { props: { label: 'Fréquence', options, modelValue: '' } })
@@ -121,11 +126,11 @@ describe('BaseSelect', () => {
     const cancelReset = (event: Event) => event.preventDefault()
     form.addEventListener('reset', cancelReset)
     form.reset()
-    await flushPromises()
+    await settleReset()
     expect(wrapper.vm.first).toBe('weekly')
     form.removeEventListener('reset', cancelReset)
     form.reset()
-    await flushPromises()
+    await settleReset()
     expect(wrapper.vm.first).toBe('')
     expect(wrapper.vm.second).toBe('')
     expect(selects[0]!.element.validity.valueMissing).toBe(true)
@@ -133,5 +138,50 @@ describe('BaseSelect', () => {
       'Choisir une option',
       'Choisir une option',
     ])
+  })
+  it('synchronizes reset when an associated external form appears or is replaced', async () => {
+    const wrapper = mount(
+      {
+        components: { BaseSelect },
+        data: () => ({ showForm: false, value: '', options }),
+        template: `<div>
+        <form id="unrelated"></form>
+        <form v-if="showForm" id="late-form"></form>
+        <BaseSelect v-model="value" form="late-form" label="Fréquence" :options="options" />
+      </div>`,
+      },
+      { attachTo: document.body },
+    )
+    const select = wrapper.get('select')
+    await select.setValue('weekly')
+    wrapper.get<HTMLFormElement>('#unrelated').element.reset()
+    await settleReset()
+    expect(wrapper.vm.value).toBe('weekly')
+    await wrapper.setData({ showForm: true })
+    expect(select.element.form).toBe(wrapper.get('#late-form').element)
+    wrapper.get<HTMLFormElement>('#late-form').element.reset()
+    await settleReset()
+    expect(wrapper.vm.value).toBe('')
+    expect(wrapper.get('.select-value').text()).toBe('Choisir une option')
+    await select.setValue('monthly')
+    await wrapper.setData({ showForm: false })
+    await wrapper.setData({ showForm: true })
+    wrapper.get<HTMLFormElement>('#late-form').element.reset()
+    await settleReset()
+    expect(wrapper.vm.value).toBe('')
+    expect(select.element.value).toBe('')
+  })
+  it('keeps reset synchronized after a rendered form is attached to the document', async () => {
+    const wrapper = mount({
+      components: { BaseSelect },
+      data: () => ({ value: '', options }),
+      template: '<form><BaseSelect v-model="value" label="Fréquence" :options="options" /></form>',
+    })
+    document.body.append(wrapper.element)
+    await wrapper.get('select').setValue('monthly')
+    wrapper.get('form').element.reset()
+    await settleReset()
+    expect(wrapper.vm.value).toBe('')
+    expect(wrapper.get('.select-value').text()).toBe('Choisir une option')
   })
 })
