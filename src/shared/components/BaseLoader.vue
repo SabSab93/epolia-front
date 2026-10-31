@@ -4,9 +4,16 @@ withDefaults(
     label?: string
     loading?: boolean
     decorative?: boolean
+    showLabel?: boolean
     inheritColor?: boolean
   }>(),
-  { label: 'Chargement en cours.', loading: true, decorative: false, inheritColor: false },
+  {
+    label: 'Chargement en cours.',
+    loading: true,
+    decorative: false,
+    showLabel: true,
+    inheritColor: false,
+  },
 )
 
 defineOptions({ inheritAttrs: false })
@@ -32,7 +39,7 @@ defineOptions({ inheritAttrs: false })
         aria-hidden="true"
         class="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
       />
-      <span v-if="!decorative" class="min-w-0">{{ label }}</span>
+      <span v-if="!decorative" :class="showLabel ? 'min-w-0' : 'sr-only'">{{ label }}</span>
     </template>
   </span>
 </template>

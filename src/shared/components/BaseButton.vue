@@ -46,17 +46,52 @@ const props = withDefaults(
 </template>
 
 <style scoped>
-@reference "@/assets/main.css";
-
+/* Parent utility classes can still override these shared styles. */
 @layer components {
   .base-button {
-    @apply inline-flex min-h-12 min-w-12 max-w-full items-center justify-center gap-epolia-xs;
-    @apply rounded-lg border px-epolia-md py-epolia-sm;
-    @apply text-epolia-body font-semibold whitespace-normal break-words;
-    @apply touch-manipulation transition-colors active:transition-none motion-reduce:transition-none;
-    @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-epolia-focus;
-    @apply focus-visible:ring-offset-2 focus-visible:ring-offset-epolia-page;
-    @apply disabled:pointer-events-none;
+    display: inline-flex;
+    min-height: 3rem;
+    min-width: 3rem;
+    max-width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-epolia-xs);
+    padding: var(--spacing-epolia-sm) var(--spacing-epolia-md);
+    border-width: 1px;
+    border-style: solid;
+    border-radius: var(--radius);
+    font-size: var(--text-epolia-body);
+    font-weight: 600;
+    line-height: var(--text-epolia-body--line-height);
+    white-space: normal;
+    overflow-wrap: break-word;
+    touch-action: manipulation;
+    transition-property:
+      color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .base-button:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow:
+      0 0 0 2px var(--color-epolia-page),
+      0 0 0 4px var(--color-epolia-focus);
+  }
+
+  .base-button:active {
+    transition-property: none;
+  }
+
+  .base-button:disabled {
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .base-button {
+      transition-property: none;
+    }
   }
 }
 </style>

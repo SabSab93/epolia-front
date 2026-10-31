@@ -16,12 +16,18 @@ const meta = {
     label: 'Chargement des résultats.',
     loading: true,
     decorative: false,
+    showLabel: true,
     buttonVariant: 'default',
   },
   argTypes: {
     label: { name: 'Libellé', control: 'text' },
     loading: { name: 'Chargement', control: 'boolean' },
     decorative: { name: 'Décoratif', control: 'boolean' },
+    showLabel: {
+      name: 'Afficher le texte',
+      control: 'boolean',
+      if: { arg: 'decorative', eq: false },
+    },
     buttonVariant: { table: { disable: true } },
     inheritColor: { table: { disable: true } },
   },
@@ -31,7 +37,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Spinner indéterminé, sans pourcentage ni ligne de Skeleton. Vert Epolia par défaut, même décoratif ; inheritColor permet de reprendre la couleur du parent dans BaseButton. Le libellé reste visible en mode autonome. Garder BaseLoader monté avec loading=false avant de passer à true pour préparer la région status. En mode décoratif, le parent fournit l’information accessible. Le parent gère aria-busy sur la zone concernée ; une annonce immédiate reste hors de cette zone. Aucun délai, appel API ou déplacement du focus. La réduction du mouvement arrête les animations ; garder un texte d’attente visible dans le parent en mode décoratif. Les essais VoiceOver/TalkBack sur appareil restent à effectuer.',
+          'Spinner indéterminé, sans pourcentage ni ligne de Skeleton. Vert Epolia par défaut, même décoratif ; inheritColor permet de reprendre la couleur du parent dans BaseButton. showLabel=false masque seulement le texte à l’écran, en conservant le libellé accessible. Le mode décoratif masque aussi l’information aux aides techniques et suppose que le parent informe déjà du chargement. Garder BaseLoader monté avec loading=false avant de passer à true pour préparer la région status. En mode décoratif, le parent fournit l’information accessible. Le parent gère aria-busy sur la zone concernée ; une annonce immédiate reste hors de cette zone. Aucun délai, appel API ou déplacement du focus. La réduction du mouvement arrête les animations ; garder un texte d’attente visible dans le parent en mode décoratif. Les essais VoiceOver/TalkBack sur appareil restent à effectuer.',
       },
     },
   },
@@ -42,6 +48,7 @@ const meta = {
         label: args.label,
         loading: args.loading,
         decorative: args.decorative,
+        showLabel: args.showLabel,
       }))
       return { loaderProps }
     },
@@ -59,6 +66,7 @@ export const InControl = {
     label: { table: { disable: true } },
     loading: { table: { disable: true } },
     decorative: { table: { disable: true } },
+    showLabel: { table: { disable: true } },
     buttonVariant: {
       name: 'Variante du bouton',
       control: 'select',
