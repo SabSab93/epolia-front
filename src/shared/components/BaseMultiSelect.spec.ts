@@ -161,25 +161,34 @@ describe('BaseMultiSelect', () => {
   it('restores focus only after a controlled parent applies a delayed tag removal or clear', async () => {
     const wrapper = mount(BaseMultiSelect, {
       attachTo: document.body,
-      props: { label: 'Compétences', options, modelValue: ['design', 'web'] },
+      props: {
+        label: 'Compétences',
+        options,
+        modelValue: ['design', 'web'],
+        'onUpdate:modelValue': vi.fn(),
+      },
     })
     const remove = wrapper.findAll('.base-tag-remove')[0]!
     ;(remove.element as HTMLButtonElement).focus()
     await remove.trigger('click')
     await flushPromises()
     expect(wrapper.props('modelValue')).toEqual(['design', 'web'])
+    expect(wrapper.get('[role=status]').text()).toBe('')
     await wrapper.setProps({ modelValue: ['web'] })
     await flushPromises()
     expect(document.activeElement).toBe(wrapper.get('.base-tag-remove').element)
+    expect(wrapper.get('[role=status]').text()).toBe('Design graphique retiré.')
     const clear = wrapper
       .findAll('button')
       .find((button) => button.attributes('class')?.includes('multi-clear'))!
     ;(clear.element as HTMLButtonElement).focus()
     await clear.trigger('click')
     await flushPromises()
+    expect(wrapper.get('[role=status]').text()).toBe('')
     await wrapper.setProps({ modelValue: [] })
     await flushPromises()
     expect(document.activeElement).toBe(wrapper.get('.multi-trigger').element)
+    expect(wrapper.get('[role=status]').text()).toContain('Toutes les sélections')
   })
 
   it('shows unavailable values explicitly, blocks their submission and lets the user remove them', async () => {
@@ -249,6 +258,22 @@ describe('BaseMultiSelect', () => {
     expect(wrapper.text()).toContain('Erreur : Choisissez au moins une option.')
     await wrapper.setProps({ modelValue: ['design'] })
     expect(button.attributes('aria-invalid')).toBeUndefined()
+  })
+
+  it('clears an obsolete validation error when a missing selected option is restored', async () => {
+    const wrapper = mount(BaseMultiSelect, {
+      attachTo: document.body,
+      props: { label: 'Compétences', options: [], modelValue: ['design'], required: true },
+    })
+    expect(wrapper.get('select').element.reportValidity()).toBe(false)
+    await settleReset()
+    expect(wrapper.text()).toContain('Erreur : Retirez les options indisponibles.')
+    await wrapper.setProps({ options })
+    await flushPromises()
+    expect(wrapper.get('select').element.validity.valid).toBe(true)
+    expect(wrapper.props('modelValue')).toEqual(['design'])
+    expect(wrapper.get('.multi-trigger').attributes('aria-invalid')).toBeUndefined()
+    expect(wrapper.text()).not.toContain('Erreur :')
   })
 
   it('serializes external forms and handles normal, cancelled and dynamically associated resets', async () => {

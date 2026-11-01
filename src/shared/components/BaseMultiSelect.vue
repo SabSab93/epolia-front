@@ -61,7 +61,7 @@ const open = ref(false)
 const invalid = ref(false)
 const announcement = ref('')
 let leavingWithTab = false
-let pendingFocus: { values: string[]; index?: number } | undefined
+let pendingRemoval: { values: string[]; index?: number; announcement: string } | undefined
 const values = computed(() => [...new Set(model.value)])
 const optionsByValue = computed(
   () => new Map(props.options.map((option) => [option.value, option])),
@@ -145,16 +145,16 @@ function remove(value: string) {
   if (index < 0) return
   const label = selectedOptions.value[index]!.label
   const next = values.value.filter((item) => item !== value)
-  pendingFocus = { values: next, index }
+  pendingRemoval = { values: next, index, announcement: `${label} retiré.` }
+  announcement.value = ''
   model.value = next
-  announcement.value = `${label} retiré.`
 }
 
 function clear() {
   if (props.disabled || !props.clearable) return
-  pendingFocus = { values: [] }
+  pendingRemoval = { values: [], announcement: 'Toutes les sélections ont été retirées.' }
+  announcement.value = ''
   model.value = []
-  announcement.value = 'Toutes les sélections ont été retirées.'
 }
 
 function focusOptions() {
@@ -206,8 +206,8 @@ function onInvalid(event: globalThis.Event) {
 
 // A controlled parent can apply the emitted value after this event's next tick.
 watch(values, async (next) => {
-  const intent = pendingFocus
-  pendingFocus = undefined
+  const intent = pendingRemoval
+  pendingRemoval = undefined
   if (
     !intent ||
     next.length !== intent.values.length ||
@@ -215,6 +215,7 @@ watch(values, async (next) => {
   )
     return
   await nextTick()
+  announcement.value = intent.announcement
   if (props.disabled) return
   const buttons =
     tags.value?.querySelectorAll<globalThis.HTMLButtonElement>('button:not(:disabled)')
@@ -224,7 +225,7 @@ watch(values, async (next) => {
   else focusTrigger()
 })
 
-watch([values, () => props.required, () => props.disabled], () => {
+watch([values, () => props.required, () => props.disabled, hasUnavailableSelection], () => {
   invalid.value = false
   if (props.disabled) open.value = false
 })
@@ -439,8 +440,6 @@ watchPostEffect((onCleanup) => {
   inset-inline-end: 2rem;
   top: 50%;
   transform: translateY(-50%);
-}
-.multi-clear {
   display: grid;
   place-items: center;
   width: 48px;
