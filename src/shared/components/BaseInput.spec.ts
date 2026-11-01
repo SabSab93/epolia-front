@@ -1,4 +1,4 @@
-import { enableAutoUnmount, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import BaseInput from '@/shared/components/BaseInput.vue'
 
@@ -370,5 +370,184 @@ describe('BaseInput', () => {
     await wrapper.setData({ description: 'updated-help', invalid: true })
     expect(input.attributes('aria-describedby')).toBe('updated-help name-help')
     expect(input.attributes('aria-invalid')).toBe('true')
+  })
+})
+
+describe('BaseInput password', () => {
+  it.each(['current-password', 'new-password'])(
+    'preserves %s and disables text correction even while revealed',
+    async (autocomplete) => {
+      const wrapper = mount(BaseInput, {
+        props: {
+          modelValue: '',
+          type: 'password',
+          label: 'Mot de passe',
+          id: 'secret',
+          autocomplete,
+          clearable: false,
+          required: true,
+        },
+        attrs: { spellcheck: true, autocapitalize: 'words', autocorrect: 'on' },
+      })
+      const input = wrapper.get('input')
+      expect(input.element.type).toBe('password')
+      expect(input.element.required).toBe(true)
+      const toggle = wrapper.get('button')
+      expect(toggle.attributes('type')).toBe('button')
+      expect(toggle.attributes('aria-controls')).toBe('secret')
+      expect(toggle.attributes('aria-label')).toBe('Afficher Mot de passe')
+      expect(toggle.attributes('aria-pressed')).toBeUndefined()
+      await toggle.trigger('click')
+      expect(input.element.type).toBe('text')
+      expect(input.attributes('autocomplete')).toBe(autocomplete)
+      expect(input.attributes('spellcheck')).toBe('false')
+      expect(input.attributes('autocapitalize')).toBe('none')
+      expect(input.attributes('autocorrect')).toBe('off')
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    },
+  )
+
+  it('reveals and hides the same input without changing its value, selection, focus or form submission', async () => {
+    const submit = vi.fn()
+    const wrapper = mount(
+      {
+        components: { BaseInput },
+        data: () => ({ value: 'Demo-fictive-27!' }),
+        methods: { submit },
+        template:
+          '<form @submit.prevent="submit"><BaseInput v-model="value" id="secret" type="password" label="Mot de passe" name="password" :clearable="false" /></form>',
+      },
+      { attachTo: document.body },
+    )
+    await wrapper.get('input').setValue('  Demo-fictive-27!  ')
+    const input = wrapper.get('input').element
+    input.setSelectionRange(2, 7, 'forward')
+    const toggle = wrapper.get('button')
+    ;(toggle.element as HTMLButtonElement).focus()
+    await toggle.trigger('click')
+    await flushPromises()
+    expect(wrapper.get('input').element).toBe(input)
+    expect(input.type).toBe('text')
+    expect(input.selectionStart).toBe(2)
+    expect(input.selectionEnd).toBe(7)
+    expect(document.activeElement).toBe(toggle.element)
+    expect(wrapper.vm.value).toBe('  Demo-fictive-27!  ')
+    expect(new FormData(wrapper.get('form').element).get('password')).toBe(wrapper.vm.value)
+    await toggle.trigger('click')
+    await flushPromises()
+    expect(input.type).toBe('password')
+    expect(document.activeElement).toBe(toggle.element)
+    expect(submit).not.toHaveBeenCalled()
+  })
+
+  it('keeps visibility independent and allows readonly consultation while blocking disabled actions', async () => {
+    const wrapper = mount({
+      components: { BaseInput },
+      data: () => ({ disabled: true, readonly: false }),
+      template:
+        '<div><BaseInput model-value="Fictif A" type="password" label="Premier" :disabled="disabled" :readonly="readonly" /><BaseInput model-value="Fictif B" type="password" label="Second" :clearable="false" /></div>',
+    })
+    const fields = wrapper.findAllComponents(BaseInput)
+    const first = fields[0]!
+    expect(first.get('button').element.disabled).toBe(true)
+    await first.get('button').trigger('click')
+    expect(first.get('input').element.type).toBe('password')
+    await wrapper.setData({ disabled: false, readonly: true })
+    expect(first.get('input').element.readOnly).toBe(true)
+    expect(first.findAll('button')).toHaveLength(1)
+    await first.get('button').trigger('click')
+    await flushPromises()
+    expect(first.get('input').element.type).toBe('text')
+    expect(fields[1]!.get('input').element.type).toBe('password')
+    await wrapper.setData({ disabled: true })
+    expect(first.get('input').element.type).toBe('password')
+  })
+
+  it('masks again on clearing or switching types without losing the controlled value', async () => {
+    const wrapper = mount(
+      {
+        components: { BaseInput },
+        data: () => ({ value: 'Demo fictive', type: 'password' }),
+        template: '<BaseInput v-model="value" :type="type" label="Secret" />',
+      },
+      { attachTo: document.body },
+    )
+    const toggle = () =>
+      wrapper.findAll('button').find((button) => button.attributes('aria-controls'))!
+    await toggle().trigger('click')
+    await flushPromises()
+    await wrapper.setData({ type: 'text' })
+    await wrapper.setData({ type: 'password' })
+    expect(wrapper.get('input').element.type).toBe('password')
+    expect(wrapper.vm.value).toBe('Demo fictive')
+    await toggle().trigger('click')
+    await flushPromises()
+    const clear = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('aria-label')?.startsWith('Effacer'))!
+    await clear.trigger('click')
+    await flushPromises()
+    expect(wrapper.vm.value).toBe('')
+    expect(wrapper.get('input').element.type).toBe('password')
+    expect(document.activeElement).toBe(wrapper.get('input').element)
+  })
+
+  it.each(['text', 'email', 'date', 'textarea', 'password'] as const)(
+    'keeps %s native reset and its cancellation consistent with v-model',
+    async (type) => {
+      const value = type === 'date' ? '2000-01-01' : 'Demo fictive'
+      const wrapper = mount(
+        {
+          components: { BaseInput },
+          data: () => ({ value, type }),
+          template:
+            '<form><BaseInput v-model="value" :type="type" label="Champ" :clearable="false" /></form>',
+        },
+        { attachTo: document.body },
+      )
+      if (type === 'password') {
+        await wrapper.get('button').trigger('click')
+        await flushPromises()
+      }
+      const form = wrapper.get('form').element
+      form.addEventListener('reset', (event) => event.preventDefault(), { once: true })
+      form.reset()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      await flushPromises()
+      expect(wrapper.vm.value).toBe(value)
+      if (type === 'password') expect(wrapper.get('input').element.type).toBe('text')
+      form.reset()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      await flushPromises()
+      expect(wrapper.vm.value).toBe('')
+      expect(
+        wrapper.get<HTMLInputElement | HTMLTextAreaElement>('input,textarea').element.value,
+      ).toBe('')
+      if (type === 'password') expect(wrapper.get('input').element.type).toBe('password')
+    },
+  )
+
+  it('resets a password associated with a late external form and ignores unrelated forms', async () => {
+    const wrapper = mount(
+      {
+        components: { BaseInput },
+        data: () => ({ value: 'Demo fictive', show: false }),
+        template:
+          '<div><form id="other"></form><form v-if="show" id="late"></form><BaseInput v-model="value" type="password" label="Secret" form="late" :clearable="false" /></div>',
+      },
+      { attachTo: document.body },
+    )
+    await wrapper.get('button').trigger('click')
+    await wrapper.setData({ show: true })
+    wrapper.get<HTMLFormElement>('#other').element.reset()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await flushPromises()
+    expect(wrapper.vm.value).toBe('Demo fictive')
+    expect(wrapper.get('input').element.type).toBe('text')
+    wrapper.get<HTMLFormElement>('#late').element.reset()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await flushPromises()
+    expect(wrapper.vm.value).toBe('')
+    expect(wrapper.get('input').element.type).toBe('password')
   })
 })

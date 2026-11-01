@@ -30,7 +30,7 @@ const meta = {
     error: 'Vérifiez votre saisie.',
   },
   argTypes: {
-    type: { control: 'select', options: ['text', 'email', 'date', 'textarea'] },
+    type: { control: 'select', options: ['text', 'email', 'date', 'textarea', 'password'] },
     showLabel: { name: 'Afficher le label', control: 'boolean' },
     showHelp: { name: 'Afficher l’aide', control: 'boolean' },
     showError: { name: 'Afficher l’erreur', control: 'boolean' },
@@ -44,6 +44,11 @@ const meta = {
     readonly: { control: 'boolean' },
     clearable: { control: 'boolean' },
     rows: { control: { type: 'number', min: 1 }, if: { arg: 'type', eq: 'textarea' } },
+    autocomplete: {
+      control: 'select',
+      options: ['current-password', 'new-password'],
+      if: { arg: 'type', eq: 'password' },
+    },
     inputmode: {
       control: 'select',
       options: ['text', 'email', 'search', 'tel', 'url', 'numeric', 'decimal', 'none'],
@@ -141,4 +146,27 @@ export const Date: Story = {
 export const DateError: Story = {
   name: 'Date en erreur',
   args: { ...Date.args, modelValue: '1996-02-29', showError: true },
+}
+
+export const Password: Story = {
+  name: 'Mot de passe',
+  args: {
+    type: 'password',
+    label: 'Mot de passe',
+    ariaLabel: 'Mot de passe',
+    name: 'password',
+    autocomplete: 'current-password',
+    placeholder: undefined,
+    clearable: false,
+    help: 'Utilisez le mot de passe associé à votre compte.',
+    error: 'Vérifiez votre mot de passe.',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`<BaseInput v-model="password" type="password" label="Mot de passe" autocomplete="current-password" :clearable="false" />`. Masqué au départ ; le bouton œil fermé/œil ouvert (Afficher/Masquer pour les lecteurs d’écran) conserve la valeur et le focus du bouton. Connexion : current-password ; inscription/changement : new-password via Controls. Retour masqué après vidage, reset, désactivation ou changement de type. Readonly permet la consultation, disabled bloque la bascule. Le reset natif synchronise le modèle et respecte son annulation. Aucun contrôle de complexité ni journalisation. Utiliser uniquement des données fictives dans Storybook ; essais Android/iOS, lecteurs d’écran et gestionnaires de mots de passe réels à effectuer.',
+      },
+    },
+  },
 }
