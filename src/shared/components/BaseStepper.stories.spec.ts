@@ -24,7 +24,7 @@ it('keeps the summary and the progress synchronized with Controls', async () => 
   expect(wrapper.get('p').text()).toBe('Étape 2 sur 6 · Études')
   Object.assign(args, { label: 'Création du profil' })
   await nextTick()
-  expect(wrapper.get('nav').attributes('aria-label')).toBe('Création du profil')
+  expect(wrapper.get('[role=group]').attributes('aria-label')).toBe('Création du profil')
 })
 
 it('covers the start and the end of the journey', () => {
@@ -49,7 +49,7 @@ it('lets the screen own the current step and the completeness in a composition',
   const args = { ...meta.args, currentStepId: 'proof' }
   const wrapper = mount(renderComposition(args as StepperStoryArgs))
   const button = (label: string) => wrapper.findAll('button').find((b) => b.text() === label)!
-  const summary = () => wrapper.get('nav p').text()
+  const summary = () => wrapper.get('[role=group] p').text()
   expect(summary()).toBe('Étape 3 sur 6 · Justificatif')
   expect(wrapper.get('h2').text()).toBe('Justificatif')
   await button('Continuer').trigger('click')
@@ -57,7 +57,7 @@ it('lets the screen own the current step and the completeness in a composition',
   expect(statusOf(wrapper, 2)).toContain('Terminée')
   await button('Précédent').trigger('click')
   expect(summary()).toBe('Étape 3 sur 6 · Justificatif')
-  expect(wrapper.findAll('nav button')).toHaveLength(0)
+  expect(wrapper.findAll('[role=group] button')).toHaveLength(0)
 })
 
 it('disables the previous action on the first step and finishes on the last', async () => {
@@ -70,6 +70,6 @@ it('disables the previous action on the first step and finishes on the last', as
   )
   const finish = last.findAll('button').find((b) => b.text() === 'Terminer')!
   await finish.trigger('click')
-  expect(last.get('nav p').text()).toBe('Étape 6 sur 6 · Récapitulatif')
+  expect(last.get('[role=group] p').text()).toBe('Étape 6 sur 6 · Récapitulatif')
   expect(statusOf(last, 5)).toContain('Étape en cours')
 })

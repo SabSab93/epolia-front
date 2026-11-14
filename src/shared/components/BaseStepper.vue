@@ -1,3 +1,25 @@
+<template>
+  <div class="base-stepper" role="group" :aria-label="label">
+    <p class="base-stepper-summary" aria-live="polite">{{ summaryText }}</p>
+    <p v-if="remainingSteps" class="base-stepper-summary">
+      {{ remainingSteps }} {{ remainingSteps === 1 ? 'étape à compléter' : 'étapes à compléter' }}
+    </p>
+    <div class="base-stepper-track" aria-hidden="true">
+      <div class="base-stepper-fill" :style="{ inlineSize: `${percent}%` }" />
+    </div>
+    <ol class="sr-only">
+      <li
+        v-for="item in items"
+        :key="`${item.index}-${item.step.id}`"
+        :data-status="item.status"
+        :aria-current="item.status === 'current' ? 'step' : undefined"
+      >
+        {{ item.step.label }} : {{ item.statusLabel }}
+      </li>
+    </ol>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 
@@ -51,6 +73,10 @@ const items = computed(() =>
   }),
 )
 
+const remainingSteps = computed(
+  () => items.value.filter(({ status }) => status === 'incomplete').length,
+)
+
 const percent = computed(() =>
   currentIndex.value < 0 || props.steps.length === 0
     ? 0
@@ -65,25 +91,6 @@ const summaryText = computed(() => {
     : `${props.steps.length} étapes`
 })
 </script>
-
-<template>
-  <nav class="base-stepper" :aria-label="label">
-    <p class="base-stepper-summary" aria-live="polite">{{ summaryText }}</p>
-    <div class="base-stepper-track" aria-hidden="true">
-      <div class="base-stepper-fill" :style="{ inlineSize: `${percent}%` }" />
-    </div>
-    <ol class="sr-only">
-      <li
-        v-for="item in items"
-        :key="`${item.index}-${item.step.id}`"
-        :data-status="item.status"
-        :aria-current="item.status === 'current' ? 'step' : undefined"
-      >
-        {{ item.step.label }} : {{ item.statusLabel }}
-      </li>
-    </ol>
-  </nav>
-</template>
 
 <style scoped>
 @layer components {

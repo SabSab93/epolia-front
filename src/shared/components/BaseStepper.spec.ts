@@ -16,9 +16,9 @@ function statusTexts(wrapper: ReturnType<typeof mount>) {
 }
 
 describe('BaseStepper', () => {
-  it('announces the named current step in an accessible navigation landmark', () => {
+  it('announces the named current step in an named group', () => {
     const wrapper = mount(BaseStepper, { props: { steps, currentStepId: 'studies' } })
-    expect(wrapper.element.tagName).toBe('NAV')
+    expect(wrapper.attributes('role')).toBe('group')
     expect(wrapper.attributes('aria-label')).toBe('Progression du parcours')
     expect(wrapper.get('p').text()).toBe('Étape 2 sur 4 · Études')
     expect(wrapper.get('p').attributes('aria-live')).toBe('polite')
@@ -40,6 +40,7 @@ describe('BaseStepper', () => {
 
   it('keeps real completeness separate from position and never invents it', () => {
     const wrapper = mount(BaseStepper, { props: { steps, currentStepId: 'recap' } })
+    expect(wrapper.findAll('p')[1]?.text()).toBe('2 étapes à compléter')
     expect(statusTexts(wrapper)).toEqual([
       'Identité : Terminée',
       'Études : À compléter',

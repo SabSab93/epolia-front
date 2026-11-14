@@ -43,7 +43,7 @@ const meta = {
       control: 'select',
       options: onboardingSteps.map((step) => step.id),
     },
-    label: { name: 'Nom de la navigation', control: 'text' },
+    label: { name: 'Nom du groupe', control: 'text' },
   },
   decorators: [() => ({ template: '<div class="w-full max-w-sm p-epolia-md"><story /></div>' })],
   parameters: {
@@ -51,7 +51,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Progression d’un parcours en étapes nommées, pour l’application mobile : une ligne « Étape n sur N · libellé » et une barre, comme sur la maquette. **Trois responsabilités séparées** : la *progression visuelle* (barre) ne dépend que de la position de l’étape courante ; la *complétude réelle* vient uniquement du champ `completed` fourni par le consommateur, une étape antérieure non terminée est annoncée « À compléter » ; la *navigation* n’existe pas dans ce composant, il est purement informatif (aucun bouton, aucun événement). **API** : `steps` (`{ id, label, completed? }`, ids uniques), `currentStepId`, `label` (nom de la navigation, « Progression du parcours »), `summary` et `statusLabels` pour adapter les textes. Pas de `v-model` : le composant ne change jamais l’étape courante, ne conserve aucune progression, ne fait aucun appel API et n’applique aucune règle métier ; l’écran décide quand l’utilisateur peut avancer, revenir en arrière et ce qui est enregistré. **Accessibilité** : `<nav>` nommé, résumé annoncé poliment à chaque changement d’étape, et liste de toutes les étapes avec leur état (« Identité : Terminée ») réservée aux lecteurs d’écran, avec `aria-current="step"` sur l’étape courante ; l’état ne dépend donc pas de la couleur. **Mobile** : texte en `rem` donc agrandi avec la taille du texte, libellés longs à la ligne sans coupure, mouvement réduit respecté, mode contraste forcé pris en charge. Le composant n’est pas interactif : aucune cible tactile ni parcours clavier. **Limites** : les essais navigateur ne couvrent pas les appareils Android/iOS ni VoiceOver/TalkBack. Exemple : `<BaseStepper :steps="steps" current-step-id="skills" />`.',
+          'Progression d’un parcours en étapes nommées, pour l’application mobile : une ligne « Étape n sur N · libellé » et une barre, comme sur la maquette. **Trois responsabilités séparées** : la *progression visuelle* (barre) ne dépend que de la position de l’étape courante ; la *complétude réelle* vient uniquement du champ `completed` fourni par le consommateur, une étape antérieure non terminée est annoncée « À compléter » ; la *navigation* n’existe pas dans ce composant, il est purement informatif (aucun bouton, aucun événement). **API** : `steps` (`{ id, label, completed? }`, ids uniques), `currentStepId`, `label` (nom du groupe, « Progression du parcours »), `summary` et `statusLabels` pour adapter les textes. Pas de `v-model` : le composant ne change jamais l’étape courante, ne conserve aucune progression, ne fait aucun appel API et n’applique aucune règle métier ; l’écran décide quand l’utilisateur peut avancer, revenir en arrière et ce qui est enregistré. **Accessibilité** : groupe nommé, résumé annoncé poliment à chaque changement d’étape, et liste de toutes les étapes avec leur état (« Identité : Terminée ») réservée aux lecteurs d’écran, nombre d’étapes antérieures à compléter visible, avec `aria-current="step"` sur l’étape courante ; l’état ne dépend donc pas de la couleur. **Mobile** : texte en `rem` donc agrandi avec la taille du texte, libellés longs à la ligne sans coupure, mouvement réduit respecté, mode contraste forcé pris en charge. Le composant n’est pas interactif : aucune cible tactile ni parcours clavier. **Limites** : les essais navigateur ne couvrent pas les appareils Android/iOS ni VoiceOver/TalkBack. Exemple : `<BaseStepper :steps="steps" current-step-id="skills" />`.',
       },
     },
   },
@@ -122,5 +122,9 @@ export function renderComposition(args: StepperStoryArgs) {
 export const Composition: Story = {
   name: 'Exemple de composition',
   args: { currentStepId: 'proof' },
+  argTypes: {
+    steps: { control: false },
+    currentStepId: { control: false },
+  },
   render: (args) => renderComposition(args as StepperStoryArgs),
 }
