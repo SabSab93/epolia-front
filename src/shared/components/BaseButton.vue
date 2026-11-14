@@ -15,15 +15,19 @@
       )
     "
   >
-    <BaseLoader v-if="loading" decorative inherit-color class="shrink-0" />
+    <!-- While loading, the spinner takes the icon's place so the label does not move. -->
+    <BaseLoader v-if="loading && !spinnerOnRight" decorative inherit-color class="shrink-0" />
+    <slot v-else-if="!loading" name="icon-left" />
     <span class="min-w-0">{{ label }}</span>
+    <BaseLoader v-if="loading && spinnerOnRight" decorative inherit-color class="shrink-0" />
+    <slot v-else-if="!loading" name="icon-right" />
   </Primitive>
 </template>
 
 <script setup lang="ts">
 import { cva, type VariantProps } from 'class-variance-authority'
 import { Primitive } from 'reka-ui'
-import type { HTMLAttributes } from 'vue'
+import { computed, useSlots, type HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/utils'
 import BaseLoader from '@/shared/components/BaseLoader.vue'
 
@@ -52,6 +56,10 @@ const props = withDefaults(
   }>(),
   { type: 'button', variant: 'primary', disabled: false, loading: false, class: '' },
 )
+
+// Without an icon, or with a left icon, the spinner stays on the left.
+const slots = useSlots()
+const spinnerOnRight = computed(() => Boolean(slots['icon-right']) && !slots['icon-left'])
 </script>
 
 <style scoped>
