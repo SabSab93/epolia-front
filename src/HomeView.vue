@@ -1,46 +1,41 @@
 <script setup lang="ts">
-import { getActivePinia } from 'pinia'
+import { onMounted, useTemplateRef } from 'vue'
+import { useRouter } from 'vue-router'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseTitle from '@/shared/components/BaseTitle.vue'
-import { apiBaseUrl } from '@/shared/api/apiClient'
 
-const isPiniaReady = Boolean(getActivePinia())
+const router = useRouter()
+const content = useTemplateRef('content')
+
+onMounted(() => content.value?.focus())
 </script>
 
 <template>
-  <main class="flex min-h-dvh flex-col bg-epolia-page px-epolia-md py-epolia-xl text-epolia-text">
-    <section class="mx-auto flex w-full max-w-md flex-1 flex-col justify-between">
-      <div class="space-y-epolia-xl">
-        <div class="space-y-epolia-sm">
-          <p class="text-epolia-body font-semibold uppercase tracking-wide text-epolia-primary">
-            Epolia
-          </p>
-          <BaseTitle level="h1">Socle mobile prêt à évoluer</BaseTitle>
-          <p class="text-epolia-body text-epolia-text-secondary">
-            Vue, Router, Pinia et Tailwind sont branchés pour démarrer l'application mobile.
-          </p>
-        </div>
-
-        <dl class="grid gap-epolia-sm">
-          <div class="rounded-lg border border-epolia-border bg-epolia-surface p-epolia-md">
-            <dt class="text-epolia-body-small text-epolia-text-secondary">Router</dt>
-            <dd class="mt-epolia-2xs text-epolia-body font-semibold">Vue Router actif</dd>
-          </div>
-          <div class="rounded-lg border border-epolia-border bg-epolia-surface p-epolia-md">
-            <dt class="text-epolia-body-small text-epolia-text-secondary">Pinia</dt>
-            <dd class="mt-epolia-2xs text-epolia-body font-semibold">
-              {{ isPiniaReady ? 'Store disponible' : 'Store en attente' }}
-            </dd>
-          </div>
-          <div class="rounded-lg border border-epolia-border bg-epolia-surface p-epolia-md">
-            <dt class="text-epolia-body-small text-epolia-text-secondary">API</dt>
-            <dd class="mt-epolia-2xs break-all text-epolia-body-small">{{ apiBaseUrl }}</dd>
-          </div>
-        </dl>
+  <main
+    ref="content"
+    tabindex="-1"
+    class="epolia-screen-padding grid min-h-dvh place-items-center bg-epolia-secondary-hover text-epolia-text outline-none [--epolia-screen-block:var(--spacing-epolia-xl)]"
+  >
+    <section class="w-full max-w-sm space-y-epolia-xl">
+      <div class="space-y-epolia-xs text-center">
+        <BaseTitle level="h1" class="text-epolia-primary">Epolia</BaseTitle>
+        <p class="text-epolia-body text-epolia-text-secondary">
+          Trouvez un étudiant pour une mission ou proposez vos services.
+        </p>
       </div>
 
-      <div class="pt-epolia-xl">
-        <BaseButton label="Démarrer" class="w-full" />
+      <div class="flex flex-col gap-epolia-xs">
+        <BaseButton
+          label="S’inscrire"
+          class="w-full"
+          @click="router.push({ name: 'choose-role' })"
+        />
+        <BaseButton
+          label="Se connecter"
+          variant="secondary"
+          class="w-full"
+          @click="router.push({ name: 'login' })"
+        />
       </div>
     </section>
   </main>

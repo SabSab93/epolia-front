@@ -83,11 +83,22 @@
 }
 
 @theme inline {
+  --radius-epolia-card: 1rem;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-epolia-body);
+}
+
+/* Apply screen spacing inside native safe areas. */
+@utility epolia-screen-padding {
+  padding: calc(
+      var(--epolia-screen-block, var(--spacing-epolia-lg)) + env(safe-area-inset-top, 0px)
+    )
+    calc(var(--spacing-epolia-md) + env(safe-area-inset-right, 0px))
+    calc(var(--epolia-screen-block, var(--spacing-epolia-lg)) + env(safe-area-inset-bottom, 0px))
+    calc(var(--spacing-epolia-md) + env(safe-area-inset-left, 0px));
 }
 
 @layer base {
