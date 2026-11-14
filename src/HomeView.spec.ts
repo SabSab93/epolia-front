@@ -79,3 +79,26 @@ it('navigates through the public auth screens and restores focus on return to th
   await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe('Epolia'))
   expect(document.activeElement).toBe(wrapper.get('main').element)
 })
+
+it('leaves an auth screen out of the back history when returning to a different destination', async () => {
+  const testRouter = createTestRouter()
+  await testRouter.push('/')
+  await testRouter.push('/inscription/choix-du-compte')
+  await testRouter.push('/connexion')
+  const wrapper = mount(App, { global: { plugins: [createPinia(), testRouter] } })
+
+  await wrapper.get('button').trigger('click')
+  await vi.waitFor(() => expect(testRouter.currentRoute.value.name).toBe('home'))
+
+  testRouter.back()
+  await vi.waitFor(() => expect(testRouter.currentRoute.value.name).toBe('choose-role'))
+})
+
+it('keeps the return destination inside the app when registration is opened directly', async () => {
+  const testRouter = createTestRouter()
+  await testRouter.push('/inscription')
+  const wrapper = mount(App, { global: { plugins: [createPinia(), testRouter] } })
+
+  await wrapper.get('button').trigger('click')
+  await vi.waitFor(() => expect(testRouter.currentRoute.value.name).toBe('choose-role'))
+})

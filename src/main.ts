@@ -9,7 +9,10 @@ const themeColor = getComputedStyle(document.documentElement)
   .trim()
 
 if (themeColor) {
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor)
+  const themeMeta = document.createElement('meta')
+  themeMeta.name = 'theme-color'
+  themeMeta.content = themeColor
+  document.head.append(themeMeta)
 }
 
 createApp(App).use(createPinia()).use(router).mount('#app')

@@ -3,7 +3,7 @@ import { onMounted, useTemplateRef, type VNodeChild } from 'vue'
 import { useRouter, type RouteLocationRaw } from 'vue-router'
 import BaseHeader from '@/shared/components/BaseHeader.vue'
 
-defineProps<{
+const props = defineProps<{
   title: string
   backTo: RouteLocationRaw
   backLabel: string
@@ -18,6 +18,17 @@ const router = useRouter()
 const content = useTemplateRef('content')
 
 onMounted(() => content.value?.focus())
+
+function goBack() {
+  const destination = router.resolve(props.backTo)
+
+  if (router.options.history.state.back === destination.fullPath) {
+    router.back()
+    return
+  }
+
+  router.replace(destination.fullPath)
+}
 </script>
 
 <template>
@@ -28,7 +39,7 @@ onMounted(() => content.value?.focus())
     class="epolia-screen-padding min-h-dvh bg-epolia-page text-epolia-text outline-none"
   >
     <div class="mx-auto flex flex-col gap-epolia-lg" :class="wide ? 'max-w-2xl' : 'max-w-md'">
-      <BaseHeader :title="title" show-back :back-label="backLabel" @back="router.push(backTo)" />
+      <BaseHeader :title="title" show-back :back-label="backLabel" @back="goBack" />
       <div class="min-w-0 break-words text-epolia-body">
         <slot />
       </div>
