@@ -34,8 +34,8 @@ describe('BaseAvatar', () => {
       attachTo: document.body,
       props: { alt: 'Pseudonyme public' },
     })
-    expect(wrapper.attributes('role')).toBe('img')
-    expect(wrapper.attributes('aria-label')).toBe('Pseudonyme public')
+    expect(wrapper.get('.base-avatar-portrait').attributes('role')).toBe('img')
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-label')).toBe('Pseudonyme public')
     expect(wrapper.text()).toBe('?')
     expect(wrapper.get('.base-avatar-fallback').attributes('aria-hidden')).toBe('true')
     expect(wrapper.find('img').exists()).toBe(false)
@@ -49,12 +49,12 @@ describe('BaseAvatar', () => {
       attachTo: document.body,
       props: { alt: '', initials: 'CD' },
     })
-    expect(wrapper.attributes('aria-hidden')).toBe('true')
-    expect(wrapper.attributes('role')).toBeUndefined()
-    expect(wrapper.attributes('aria-label')).toBeUndefined()
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-hidden')).toBe('true')
+    expect(wrapper.get('.base-avatar-portrait').attributes('role')).toBeUndefined()
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-label')).toBeUndefined()
     await wrapper.setProps({ alt: 'Camille D.' })
-    expect(wrapper.attributes('aria-hidden')).toBeUndefined()
-    expect(wrapper.attributes('aria-label')).toBe('Camille D.')
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-hidden')).toBeUndefined()
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-label')).toBe('Camille D.')
     expect(wrapper.text()).toBe('CD')
   })
 
@@ -70,7 +70,7 @@ describe('BaseAvatar', () => {
     expect(wrapper.get('img').attributes('src')).toBe('/profile.svg')
     expect(wrapper.get('img').attributes('alt')).toBe('')
     expect(wrapper.get('img').attributes('aria-hidden')).toBe('true')
-    expect(wrapper.attributes('aria-label')).toBe('Profil public')
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-label')).toBe('Profil public')
     expect(wrapper.find('.base-avatar-fallback').exists()).toBe(false)
   })
 
@@ -82,7 +82,7 @@ describe('BaseAvatar', () => {
     await settleImage('error')
     expect(wrapper.get('.base-avatar-fallback').text()).toBe('?')
     expect(wrapper.get('img').isVisible()).toBe(false)
-    expect(wrapper.attributes('aria-label')).toBe('Profil public')
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-label')).toBe('Profil public')
   })
 
   it('resets a loaded avatar on source change and ignores stale load events', async () => {
@@ -97,13 +97,36 @@ describe('BaseAvatar', () => {
     expect(wrapper.get('img').isVisible()).toBe(false)
     await settleImage('load', oldImage)
     expect(wrapper.find('.base-avatar-fallback').exists()).toBe(true)
-    expect(wrapper.attributes('aria-label')).toBe('Second profil')
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-label')).toBe('Second profil')
     await settleImage('load')
     expect(wrapper.get('img').isVisible()).toBe(true)
     expect(wrapper.get('img').attributes('src')).toBe('/second.svg')
     await wrapper.setProps({ src: '   ' })
     expect(wrapper.find('img').exists()).toBe(false)
     expect(wrapper.get('.base-avatar-fallback').text()).toBe('SP')
+  })
+
+  it('keeps an informative badge when the portrait is decorative or its source changes', async () => {
+    const wrapper = mount(BaseAvatar, {
+      props: {
+        src: '/profile.svg',
+        alt: '',
+        initials: 'CD',
+        badgeLabel: 'Statut étudiant vérifié',
+      },
+      slots: { badge: '<svg aria-hidden="true" />' },
+    })
+    const badge = wrapper.get('[role="img"][aria-label="Statut étudiant vérifié"]')
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-hidden')).toBe('true')
+    expect(badge.get('svg').attributes('aria-hidden')).toBe('true')
+    expect(wrapper.find('button, a, [tabindex]').exists()).toBe(false)
+
+    await wrapper.setProps({ src: '' })
+    expect(wrapper.get('.base-avatar-fallback').text()).toBe('CD')
+    expect(wrapper.get('[aria-label="Statut étudiant vérifié"]').element).toBe(badge.element)
+
+    await wrapper.setProps({ badgeLabel: '' })
+    expect(badge.attributes('aria-hidden')).toBe('true')
   })
 
   it('can recover from an error with a new source', async () => {
@@ -125,7 +148,7 @@ describe('BaseAvatar', () => {
     })
     expect(wrapper.text()).toBe('É👩🏽‍💻')
     expect(wrapper.attributes('title')).toBeUndefined()
-    expect(wrapper.attributes('aria-label')).toBeUndefined()
+    expect(wrapper.get('.base-avatar-portrait').attributes('aria-label')).toBeUndefined()
     await wrapper.setProps({ initials: '   ' })
     expect(wrapper.text()).toBe('?')
   })
