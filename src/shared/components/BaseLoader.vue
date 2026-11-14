@@ -1,24 +1,3 @@
-<script setup lang="ts">
-withDefaults(
-  defineProps<{
-    label?: string
-    loading?: boolean
-    decorative?: boolean
-    showLabel?: boolean
-    inheritColor?: boolean
-  }>(),
-  {
-    label: 'Chargement en cours.',
-    loading: true,
-    decorative: false,
-    showLabel: true,
-    inheritColor: false,
-  },
-)
-
-defineOptions({ inheritAttrs: false })
-</script>
-
 <template>
   <span
     v-bind="$attrs"
@@ -43,6 +22,27 @@ defineOptions({ inheritAttrs: false })
     </template>
   </span>
 </template>
+
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    label?: string
+    loading?: boolean
+    decorative?: boolean
+    showLabel?: boolean
+    inheritColor?: boolean
+  }>(),
+  {
+    label: 'Chargement en cours.',
+    loading: true,
+    decorative: false,
+    showLabel: true,
+    inheritColor: false,
+  },
+)
+
+defineOptions({ inheritAttrs: false })
+</script>
 
 <style scoped>
 .base-loader {

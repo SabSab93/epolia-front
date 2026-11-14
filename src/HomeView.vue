@@ -1,15 +1,3 @@
-<script setup lang="ts">
-import { onMounted, useTemplateRef } from 'vue'
-import { useRouter } from 'vue-router'
-import BaseButton from '@/shared/components/BaseButton.vue'
-import BaseTitle from '@/shared/components/BaseTitle.vue'
-
-const router = useRouter()
-const content = useTemplateRef('content')
-
-onMounted(() => content.value?.focus())
-</script>
-
 <template>
   <main
     ref="content"
@@ -41,3 +29,15 @@ onMounted(() => content.value?.focus())
     </section>
   </main>
 </template>
+
+<script setup lang="ts">
+import { onMounted, useTemplateRef } from 'vue'
+import { useRouter } from 'vue-router'
+import BaseButton from '@/shared/components/BaseButton.vue'
+import BaseTitle from '@/shared/components/BaseTitle.vue'
+
+const router = useRouter()
+const content = useTemplateRef('content')
+
+onMounted(() => content.value?.focus())
+</script>

@@ -1,9 +1,3 @@
-<script setup lang="ts">
-import { RouterLink, type RouteLocationRaw } from 'vue-router'
-
-defineProps<{ to: RouteLocationRaw }>()
-</script>
-
 <template>
   <RouterLink
     :to="to"
@@ -12,3 +6,9 @@ defineProps<{ to: RouteLocationRaw }>()
     <slot />
   </RouterLink>
 </template>
+
+<script setup lang="ts">
+import { RouterLink, type RouteLocationRaw } from 'vue-router'
+
+defineProps<{ to: RouteLocationRaw }>()
+</script>

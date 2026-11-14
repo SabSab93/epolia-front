@@ -1,3 +1,25 @@
+<template>
+  <Primitive
+    as="button"
+    :type="type"
+    :disabled="disabled || loading"
+    :aria-busy="loading || undefined"
+    :class="
+      cn(
+        buttonVariants({ variant }),
+        !loading &&
+          (variant === 'tertiary'
+            ? 'disabled:text-epolia-text-secondary'
+            : 'disabled:border-epolia-input-disabled-border disabled:bg-epolia-input-disabled disabled:text-epolia-text-secondary'),
+        props.class,
+      )
+    "
+  >
+    <BaseLoader v-if="loading" decorative inherit-color class="shrink-0" />
+    <span class="min-w-0">{{ label }}</span>
+  </Primitive>
+</template>
+
 <script setup lang="ts">
 import { cva, type VariantProps } from 'class-variance-authority'
 import { Primitive } from 'reka-ui'
@@ -31,28 +53,6 @@ const props = withDefaults(
   { type: 'button', variant: 'primary', disabled: false, loading: false, class: '' },
 )
 </script>
-
-<template>
-  <Primitive
-    as="button"
-    :type="type"
-    :disabled="disabled || loading"
-    :aria-busy="loading || undefined"
-    :class="
-      cn(
-        buttonVariants({ variant }),
-        !loading &&
-          (variant === 'tertiary'
-            ? 'disabled:text-epolia-text-secondary'
-            : 'disabled:border-epolia-input-disabled-border disabled:bg-epolia-input-disabled disabled:text-epolia-text-secondary'),
-        props.class,
-      )
-    "
-  >
-    <BaseLoader v-if="loading" decorative inherit-color class="shrink-0" />
-    <span class="min-w-0">{{ label }}</span>
-  </Primitive>
-</template>
 
 <style scoped>
 /* Parent utility classes can still override these shared styles. */

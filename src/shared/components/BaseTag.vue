@@ -1,23 +1,3 @@
-<script setup lang="ts">
-import type { VNodeChild } from 'vue'
-
-const props = withDefaults(
-  defineProps<{
-    label: string
-    clearable?: boolean
-    disabled?: boolean
-  }>(),
-  { clearable: false, disabled: false },
-)
-
-const emit = defineEmits<{ remove: [] }>()
-defineSlots<{ icon?(): VNodeChild }>()
-
-function remove() {
-  if (props.clearable && !props.disabled) emit('remove')
-}
-</script>
-
 <template>
   <span
     class="base-tag"
@@ -37,6 +17,26 @@ function remove() {
     </button>
   </span>
 </template>
+
+<script setup lang="ts">
+import type { VNodeChild } from 'vue'
+
+const props = withDefaults(
+  defineProps<{
+    label: string
+    clearable?: boolean
+    disabled?: boolean
+  }>(),
+  { clearable: false, disabled: false },
+)
+
+const emit = defineEmits<{ remove: [] }>()
+defineSlots<{ icon?(): VNodeChild }>()
+
+function remove() {
+  if (props.clearable && !props.disabled) emit('remove')
+}
+</script>
 
 <style scoped>
 @layer components {

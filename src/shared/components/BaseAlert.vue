@@ -1,3 +1,19 @@
+<template>
+  <div
+    v-bind="$attrs"
+    :role="
+      announcement === 'polite' ? 'status' : announcement === 'assertive' ? 'alert' : undefined
+    "
+    :aria-atomic="announcement !== 'off' ? true : undefined"
+    :class="message ? alertVariants({ variant }) : undefined"
+  >
+    <template v-if="message">
+      <p v-if="title" class="font-semibold">{{ title }}</p>
+      <p class="whitespace-pre-line">{{ message }}</p>
+    </template>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { cva, type VariantProps } from 'class-variance-authority'
 
@@ -28,22 +44,6 @@ withDefaults(
 
 defineOptions({ inheritAttrs: false })
 </script>
-
-<template>
-  <div
-    v-bind="$attrs"
-    :role="
-      announcement === 'polite' ? 'status' : announcement === 'assertive' ? 'alert' : undefined
-    "
-    :aria-atomic="announcement !== 'off' ? true : undefined"
-    :class="message ? alertVariants({ variant }) : undefined"
-  >
-    <template v-if="message">
-      <p v-if="title" class="font-semibold">{{ title }}</p>
-      <p class="whitespace-pre-line">{{ message }}</p>
-    </template>
-  </div>
-</template>
 
 <style scoped>
 .base-alert {

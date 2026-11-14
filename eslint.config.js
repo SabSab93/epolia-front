@@ -36,6 +36,9 @@ export default tseslint.config(
   },
   {
     files: ['**/*.vue'],
+    rules: {
+      'vue/block-order': ['error', { order: ['template', 'script', 'style'] }],
+    },
     languageOptions: {
       parserOptions: {
         parser: tseslint.parser,

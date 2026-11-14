@@ -1,3 +1,108 @@
+<template>
+  <div class="select-field">
+    <label :for="inputId" class="text-epolia-body font-semibold">
+      {{ label }}<span v-if="required" aria-hidden="true" class="ms-epolia-2xs">*</span>
+    </label>
+    <SelectRoot v-model="menuSelection" :disabled="isDisabled" :required="required">
+      <div
+        class="select-control"
+        :class="{ 'select-invalid': displayedError, 'select-disabled': isDisabled }"
+      >
+        <SelectTrigger
+          v-bind="attrs"
+          :id="inputId"
+          ref="trigger"
+          :aria-describedby="describedBy()"
+          :aria-invalid="
+            displayedError ? true : (attrs['aria-invalid'] as SelectHTMLAttributes['aria-invalid'])
+          "
+          class="select-surface"
+          :class="{ 'select-has-clear': showClear }"
+        >
+          <span class="select-value" :class="{ 'select-placeholder': !selectedOption }">{{
+            selectedOption?.label ?? emptyLabel
+          }}</span>
+          <span aria-hidden="true" class="select-arrow" />
+        </SelectTrigger>
+        <button
+          v-if="showClear"
+          type="button"
+          class="select-clear"
+          :aria-label="`Effacer la sélection : ${label}`"
+          @click="clearSelection"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <SelectPortal>
+        <SelectContent position="popper" :side-offset="8" class="epolia-select-menu">
+          <SelectViewport>
+            <SelectItem v-if="!required" :value="emptyValue" class="select-option">
+              <SelectItemText>{{ placeholder }}</SelectItemText>
+              <SelectItemIndicator class="select-check" aria-hidden="true">✓</SelectItemIndicator>
+            </SelectItem>
+            <SelectItem
+              v-for="option in options"
+              :key="option.value"
+              :value="option.value"
+              :disabled="option.disabled"
+              class="select-option"
+            >
+              <SelectItemText>{{ option.label }}</SelectItemText>
+              <SelectItemIndicator class="select-check" aria-hidden="true">✓</SelectItemIndicator>
+            </SelectItem>
+          </SelectViewport>
+        </SelectContent>
+      </SelectPortal>
+    </SelectRoot>
+    <!-- Form transport only: Reka owns all interaction; keep external form/reset support. -->
+    <select
+      ref="control"
+      v-model="selection"
+      :name="name"
+      :form="form"
+      :required="required"
+      :disabled="isDisabled"
+      :autocomplete="attrs.autocomplete as string"
+      tabindex="-1"
+      aria-hidden="true"
+      class="select-native"
+      @invalid="onInvalid"
+    >
+      <option value="" :disabled="required" selected>{{ emptyLabel }}</option>
+      <option
+        v-for="option in options"
+        :key="option.value"
+        :value="option.value"
+        :disabled="option.disabled"
+      >
+        {{ option.label }}
+      </option>
+    </select>
+    <p
+      v-if="help"
+      :id="`${inputId}-help`"
+      class="text-epolia-body-small text-epolia-text-secondary"
+    >
+      {{ help }}
+    </p>
+    <p
+      v-if="stateDescription"
+      :id="`${inputId}-state`"
+      class="text-epolia-body-small text-epolia-text-secondary"
+    >
+      {{ stateDescription }}
+    </p>
+    <p
+      v-if="displayedError"
+      :id="`${inputId}-error`"
+      class="text-epolia-body-small text-epolia-error"
+    >
+      Erreur : {{ displayedError }}
+    </p>
+  </div>
+</template>
+
 <script setup lang="ts">
 import {
   computed,
@@ -164,111 +269,6 @@ watchPostEffect((onCleanup) => {
   onCleanup(() => root.removeEventListener('reset', reset, true))
 })
 </script>
-
-<template>
-  <div class="select-field">
-    <label :for="inputId" class="text-epolia-body font-semibold">
-      {{ label }}<span v-if="required" aria-hidden="true" class="ms-epolia-2xs">*</span>
-    </label>
-    <SelectRoot v-model="menuSelection" :disabled="isDisabled" :required="required">
-      <div
-        class="select-control"
-        :class="{ 'select-invalid': displayedError, 'select-disabled': isDisabled }"
-      >
-        <SelectTrigger
-          v-bind="attrs"
-          :id="inputId"
-          ref="trigger"
-          :aria-describedby="describedBy()"
-          :aria-invalid="
-            displayedError ? true : (attrs['aria-invalid'] as SelectHTMLAttributes['aria-invalid'])
-          "
-          class="select-surface"
-          :class="{ 'select-has-clear': showClear }"
-        >
-          <span class="select-value" :class="{ 'select-placeholder': !selectedOption }">{{
-            selectedOption?.label ?? emptyLabel
-          }}</span>
-          <span aria-hidden="true" class="select-arrow" />
-        </SelectTrigger>
-        <button
-          v-if="showClear"
-          type="button"
-          class="select-clear"
-          :aria-label="`Effacer la sélection : ${label}`"
-          @click="clearSelection"
-        >
-          <span aria-hidden="true">×</span>
-        </button>
-      </div>
-      <SelectPortal>
-        <SelectContent position="popper" :side-offset="8" class="epolia-select-menu">
-          <SelectViewport>
-            <SelectItem v-if="!required" :value="emptyValue" class="select-option">
-              <SelectItemText>{{ placeholder }}</SelectItemText>
-              <SelectItemIndicator class="select-check" aria-hidden="true">✓</SelectItemIndicator>
-            </SelectItem>
-            <SelectItem
-              v-for="option in options"
-              :key="option.value"
-              :value="option.value"
-              :disabled="option.disabled"
-              class="select-option"
-            >
-              <SelectItemText>{{ option.label }}</SelectItemText>
-              <SelectItemIndicator class="select-check" aria-hidden="true">✓</SelectItemIndicator>
-            </SelectItem>
-          </SelectViewport>
-        </SelectContent>
-      </SelectPortal>
-    </SelectRoot>
-    <!-- Form transport only: Reka owns all interaction; keep external form/reset support. -->
-    <select
-      ref="control"
-      v-model="selection"
-      :name="name"
-      :form="form"
-      :required="required"
-      :disabled="isDisabled"
-      :autocomplete="attrs.autocomplete as string"
-      tabindex="-1"
-      aria-hidden="true"
-      class="select-native"
-      @invalid="onInvalid"
-    >
-      <option value="" :disabled="required" selected>{{ emptyLabel }}</option>
-      <option
-        v-for="option in options"
-        :key="option.value"
-        :value="option.value"
-        :disabled="option.disabled"
-      >
-        {{ option.label }}
-      </option>
-    </select>
-    <p
-      v-if="help"
-      :id="`${inputId}-help`"
-      class="text-epolia-body-small text-epolia-text-secondary"
-    >
-      {{ help }}
-    </p>
-    <p
-      v-if="stateDescription"
-      :id="`${inputId}-state`"
-      class="text-epolia-body-small text-epolia-text-secondary"
-    >
-      {{ stateDescription }}
-    </p>
-    <p
-      v-if="displayedError"
-      :id="`${inputId}-error`"
-      class="text-epolia-body-small text-epolia-error"
-    >
-      Erreur : {{ displayedError }}
-    </p>
-  </div>
-</template>
 
 <style scoped>
 .select-field {
