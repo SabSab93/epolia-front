@@ -120,6 +120,34 @@ describe('auth session', () => {
     expect(auth.user).toEqual(user)
   })
 
+  it.each([
+    { status: 401, code: 'UNAUTHORIZED', reason: 'expired' },
+    { status: 403, code: 'ACCOUNT_NOT_ACTIVE', reason: 'forbidden' },
+  ])(
+    'keeps the session $reason after a stale verification during role activation',
+    async ({ status, code, reason }) => {
+      const verification = deferred<Response>()
+      const fetchMock = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(json(signedIn))
+        .mockReturnValueOnce(verification.promise)
+        .mockResolvedValueOnce(json({ code }, status))
+      vi.stubGlobal('fetch', fetchMock)
+      const auth = useAuthStore(createPinia())
+      await auth.login(loginInput)
+
+      const restoration = auth.restore()
+      await expect(auth.activateRole(AccountRoleEnum.Customer)).rejects.toMatchObject({ status })
+      expect(writeAccessToken).toHaveBeenLastCalledWith(null)
+
+      verification.resolve(json(user))
+      await restoration
+      expect(auth.status).toBe(reason)
+      expect(auth.isAuthenticated).toBe(false)
+      expect(auth.user).toBeNull()
+    },
+  )
+
   it('returns to the anonymous state when a retry finds an empty storage', async () => {
     vi.mocked(readAccessToken).mockRejectedValueOnce(new Error('Storage unavailable'))
     const auth = useAuthStore(createPinia())

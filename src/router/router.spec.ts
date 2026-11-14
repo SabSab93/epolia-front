@@ -220,9 +220,15 @@ describe('adding a role to the current account', () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/api/auth/roles'))).toBe(
       false,
     )
-    await wrapper.get('form').trigger('submit')
+    const submit = wrapper.get<HTMLButtonElement>('button[type="submit"]').element
+    submit.focus()
+    submit.click()
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain(`Le rôle ${label} est actif`))
+    await vi.waitFor(() =>
+      expect(document.activeElement?.textContent).toBe(
+        `Le rôle ${label} est actif sur votre compte.`,
+      ),
+    )
     expect(auth.user?.id).toBe(user.id)
     expect(auth.user?.roles).toEqual([currentRole, newRole])
     expect(writeAccessToken).toHaveBeenCalledWith('updated-token')

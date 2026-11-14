@@ -1,7 +1,7 @@
 <template>
   <AuthLayout :title="title" :back-to="{ name: 'home' }" back-label="Retour à l’accueil">
     <div class="flex flex-col gap-epolia-md">
-      <p v-if="hasRole" role="status">{{ successMessage }}</p>
+      <p v-if="hasRole" ref="confirmation" tabindex="-1">{{ successMessage }}</p>
       <form v-else class="flex flex-col gap-epolia-md" @submit.prevent="confirmRole">
         <p>{{ description }}</p>
         <p>
@@ -23,6 +23,14 @@ import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 
 const props = defineProps<{ role: AccountRoleEnum }>()
-const { title, description, hasRole, successMessage, isSubmitting, errorMessage, confirmRole } =
-  useAdditionalRoleRegistration(() => props.role)
+const {
+  title,
+  description,
+  hasRole,
+  successMessage,
+  isSubmitting,
+  errorMessage,
+  confirmation,
+  confirmRole,
+} = useAdditionalRoleRegistration(() => props.role)
 </script>

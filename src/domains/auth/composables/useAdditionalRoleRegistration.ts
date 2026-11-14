@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import { ApiError } from '@/shared/api/apiClient'
@@ -22,6 +22,7 @@ export function useAdditionalRoleRegistration(getRole: () => AccountRoleEnum) {
   )
   const isSubmitting = ref(false)
   const errorMessage = ref('')
+  const confirmation = useTemplateRef<HTMLParagraphElement>('confirmation')
 
   async function confirmRole() {
     if (isSubmitting.value || hasRole.value) return
@@ -30,6 +31,8 @@ export function useAdditionalRoleRegistration(getRole: () => AccountRoleEnum) {
     errorMessage.value = ''
     try {
       await auth.activateRole(getRole())
+      await nextTick()
+      confirmation.value?.focus()
     } catch (error) {
       if (error instanceof ApiError && error.code === 'ADULT_REQUIRED') {
         errorMessage.value = 'Vous devez avoir au moins 18 ans pour ajouter ce rôle.'
@@ -43,5 +46,14 @@ export function useAdditionalRoleRegistration(getRole: () => AccountRoleEnum) {
     }
   }
 
-  return { title, description, hasRole, successMessage, isSubmitting, errorMessage, confirmRole }
+  return {
+    title,
+    description,
+    hasRole,
+    successMessage,
+    isSubmitting,
+    errorMessage,
+    confirmation,
+    confirmRole,
+  }
 }

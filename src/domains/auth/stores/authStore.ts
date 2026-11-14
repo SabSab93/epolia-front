@@ -42,7 +42,13 @@ export const useAuthStore = defineStore('auth', () => {
     return write
   }
 
+  function cancelRestoration() {
+    restoration.value?.controller.abort()
+    restoration.value = undefined
+  }
+
   function clearSession(reason: SessionClearReasonType) {
+    cancelRestoration()
     accessToken = null
     storageRead = true
     user.value = null
@@ -112,8 +118,7 @@ export const useAuthStore = defineStore('auth', () => {
       const session = await request(controller.signal)
       ensureNotAborted(controller.signal)
 
-      restoration.value?.controller.abort()
-      restoration.value = undefined
+      cancelRestoration()
       const write = persistToken(session.accessToken)
         .then(
           () => true,
@@ -178,8 +183,6 @@ export const useAuthStore = defineStore('auth', () => {
     credentials?.abort()
     credentials = undefined
     sessionWrite = undefined
-    restoration.value?.controller.abort()
-    restoration.value = undefined
     return clearSession('anonymous')
   }
 
