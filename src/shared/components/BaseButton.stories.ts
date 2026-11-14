@@ -7,20 +7,20 @@ const meta = {
   tags: ['autodocs'],
   args: {
     label: 'Continuer',
-    variant: 'default',
+    variant: 'primary',
     disabled: false,
     loading: false,
     type: 'button',
   },
   argTypes: {
-    variant: { control: 'select', options: ['default', 'secondary', 'tertiary'] },
+    variant: { control: 'select', options: ['primary', 'secondary', 'tertiary'] },
     type: { control: 'select', options: ['button', 'submit', 'reset'] },
   },
   parameters: {
     docs: {
       description: {
         component:
-          'Bouton mobile Epolia : default rempli, secondary avec contour, tertiary sans contour. Zone tactile minimale de 48 × 48 px CSS. Le chargement bloque les clics et conserve le libellé. Palette provisoire ; aucune variante de mode sombre.',
+          'Bouton mobile Epolia : primary rempli, secondary avec contour, tertiary sans contour. Zone tactile minimale de 48 × 48 px CSS. Le chargement bloque les clics et conserve le libellé. Palette provisoire ; aucune variante de mode sombre.',
       },
     },
   },

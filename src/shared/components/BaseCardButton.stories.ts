@@ -58,7 +58,7 @@ export const AccountChoices: Story = {
   render: () => ({
     components: { BaseCardButton, BaseTitle },
     setup() {
-      const selected = ref<'CUSTOMER' | 'STUDENT'>()
+      const selected = ref<'particulier' | 'étudiant'>()
       const customer = meta.args
       return { selected, customer }
     },
@@ -68,14 +68,14 @@ export const AccountChoices: Story = {
         <BaseCardButton
           :title="customer.title"
           :description="customer.description"
-          :selected="selected === 'CUSTOMER'"
-          @click="selected = 'CUSTOMER'"
+          :selected="selected === 'particulier'"
+          @click="selected = 'particulier'"
         />
         <BaseCardButton
           title="Je suis étudiant"
           description="Présentez vos compétences, proposez vos services et choisissez des missions qui s’accordent avec votre emploi du temps."
-          :selected="selected === 'STUDENT'"
-          @click="selected = 'STUDENT'"
+          :selected="selected === 'étudiant'"
+          @click="selected = 'étudiant'"
         />
       </div>
     </div>`,

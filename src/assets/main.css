@@ -83,11 +83,11 @@
 }
 
 @theme inline {
-  --radius-epolia-card: 1rem;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-epolia: var(--radius);
   --font-sans: var(--font-epolia-body);
 }
 

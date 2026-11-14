@@ -27,6 +27,7 @@ onMounted(() => content.value?.focus())
       <div class="flex flex-col gap-epolia-xs">
         <BaseButton
           label="S’inscrire"
+          variant="primary"
           class="w-full"
           @click="router.push({ name: 'choose-role' })"
         />

@@ -5,18 +5,18 @@ import type { HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/utils'
 import BaseLoader from '@/shared/components/BaseLoader.vue'
 
-const buttonVariants = cva('base-button', {
+const buttonVariants = cva('base-button rounded-epolia border border-solid', {
   variants: {
     variant: {
-      default:
-        'border-transparent bg-epolia-primary text-epolia-primary-text hover:bg-epolia-primary-hover active:bg-epolia-primary-active',
+      primary:
+        'border-epolia-primary bg-epolia-primary text-epolia-primary-text hover:bg-epolia-primary-hover active:bg-epolia-primary-active',
       secondary:
         'border-epolia-primary bg-epolia-page text-epolia-primary hover:bg-epolia-secondary-hover active:bg-epolia-secondary-active',
       tertiary:
         'border-transparent bg-transparent text-epolia-primary hover:text-epolia-primary-hover active:text-epolia-primary-active',
     },
   },
-  defaultVariants: { variant: 'default' },
+  defaultVariants: { variant: 'primary' },
 })
 
 const props = withDefaults(
@@ -28,7 +28,7 @@ const props = withDefaults(
     loading?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { type: 'button', variant: 'default', disabled: false, loading: false, class: '' },
+  { type: 'button', variant: 'primary', disabled: false, loading: false, class: '' },
 )
 </script>
 
@@ -38,7 +38,16 @@ const props = withDefaults(
     :type="type"
     :disabled="disabled || loading"
     :aria-busy="loading || undefined"
-    :class="cn(buttonVariants({ variant }), !loading && 'disabled:opacity-50', props.class)"
+    :class="
+      cn(
+        buttonVariants({ variant }),
+        !loading &&
+          (variant === 'tertiary'
+            ? 'disabled:text-epolia-text-secondary'
+            : 'disabled:border-epolia-input-disabled-border disabled:bg-epolia-input-disabled disabled:text-epolia-text-secondary'),
+        props.class,
+      )
+    "
   >
     <BaseLoader v-if="loading" decorative inherit-color class="shrink-0" />
     <span class="min-w-0">{{ label }}</span>
@@ -57,9 +66,6 @@ const props = withDefaults(
     justify-content: center;
     gap: var(--spacing-epolia-xs);
     padding: var(--spacing-epolia-sm) var(--spacing-epolia-md);
-    border-width: 1px;
-    border-style: solid;
-    border-radius: var(--radius);
     font-size: var(--text-epolia-body);
     font-weight: 600;
     line-height: var(--text-epolia-body--line-height);
