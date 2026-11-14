@@ -32,6 +32,13 @@ arbitraire ; `0` et `auto` restent valables. Modifier les tokens communs pour
 ajuster l'échelle, sans créer des valeurs différentes pour gap/margin/padding.
 Les bordures, rayons, typographies et dimensions tactiles restent distincts.
 
+Utiliser les utilitaires Tailwind et les tokens Epolia en priorité dans les vues.
+Vérifier les composants de base existants avant d’en créer un. Une variante
+partagée convient lorsqu’elle réutilise le comportement et les états existants.
+Centraliser les valeurs visuelles récurrentes dans le thème en réutilisant
+d’abord les tokens disponibles. Réserver le CSS spécifique aux besoins non
+couverts de façon lisible, comme les zones sûres ou le contraste forcé.
+
 ## Typographie et fonds
 
 Deux styles suffisent pour les textes : `text-epolia-body` (16 px) et
