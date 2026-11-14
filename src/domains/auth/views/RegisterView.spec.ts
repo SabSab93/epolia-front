@@ -31,7 +31,7 @@ async function openRegistration(role = AccountRoleEnum.Student) {
     await input('birthDate').setValue('2000-01-01')
     await input('password').setValue('motdepasse')
   }
-  return { wrapper, button, input, readTerms, submit, fillForm }
+  return { router, wrapper, button, input, readTerms, submit, fillForm }
 }
 
 it('opens the terms from the checkbox and only checks it after accepting at the end', async () => {
@@ -51,9 +51,16 @@ it('opens the terms from the checkbox and only checks it after accepting at the 
   await input('termsAccepted').setValue(true)
   const region = wrapper.get('[aria-label="Texte des conditions d’utilisation"]')
   expect(region.attributes('tabindex')).toBe('0')
+  expect(document.activeElement).toBe(region.element)
+  const hintId = region.attributes('aria-describedby')
+  expect(wrapper.get(`[id="${hintId}"]`).text()).toContain('Faites défiler')
   region.element.scrollTop = 299
   await region.trigger('scroll')
   expect(button('Accepter').element.disabled).toBe(false)
+  const termsPanel = wrapper.get('[aria-labelledby="registration-terms-title"]')
+  expect(termsPanel.get('[role="status"]').text()).toBe(
+    'Vous pouvez maintenant accepter les conditions.',
+  )
   await button('Accepter').trigger('click')
 
   expect(input('termsAccepted').element.checked).toBe(true)
@@ -134,13 +141,11 @@ it.each([AccountRoleEnum.Student, AccountRoleEnum.Customer])(
   },
 )
 
-it('preserves the draft and requires acceptance again when the server rejects the version', async () => {
-  vi.stubGlobal(
-    'fetch',
-    vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(Response.json({ code: 'TERMS_VERSION_INVALID' }, { status: 400 })),
-  )
+it('preserves the draft and blocks reuse of the rejected terms version', async () => {
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ code: 'TERMS_VERSION_INVALID' }, { status: 400 }))
+  vi.stubGlobal('fetch', fetchMock)
   const { wrapper, button, input, readTerms, fillForm, submit } = await openRegistration()
   await fillForm()
   await readTerms()
@@ -151,9 +156,73 @@ it('preserves the draft and requires acceptance again when the server rejects th
   await button('Accepter').trigger('click')
   await submit()
   await flushPromises()
-  expect(wrapper.text()).toContain('Les conditions ont changé')
+  expect(wrapper.get('[role="alert"]').text()).toBe(
+    'Les conditions ont changé. Réessayez plus tard.',
+  )
   expect(input('firstName').element.value).toBe('Camille')
-  expect(button('Créer mon compte').element.disabled).toBe(false)
+  expect(input('password').element.value).toBe('motdepasse')
+  expect(wrapper.find('input[name="termsAccepted"]').exists()).toBe(false)
+  expect(button('Créer mon compte').element.disabled).toBe(true)
+  await submit()
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+})
+
+it('blocks a role change during submission and resets the form for the next role', async () => {
+  const reply = deferred<Response>()
+  vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockReturnValue(reply.promise))
+  const { router, wrapper, button, input, readTerms, fillForm, submit } = await openRegistration()
+  const customerRegistration = { name: 'register', query: { role: AccountRoleEnum.Customer } }
+  await fillForm()
+  await readTerms()
+  await button('Accepter').trigger('click')
+  await submit()
+  await router.push(customerRegistration)
+  expect(router.currentRoute.value.query.role).toBe(AccountRoleEnum.Student)
+
+  reply.resolve(
+    Response.json(
+      {
+        user: {
+          id: 'id',
+          email: 'camille@example.fr',
+          roles: [AccountRoleEnum.Student],
+          status: 'ACTIVE',
+        },
+        accessToken: 'test-token',
+      },
+      { status: 201 },
+    ),
+  )
+  await flushPromises()
+  expect(wrapper.text()).toContain('Votre compte est créé')
+
+  await router.push(customerRegistration)
+  expect(wrapper.text()).toContain('Compte particulier')
+  expect(wrapper.text()).not.toContain('Votre compte est créé')
+  expect(input('email').element.value).toBe('')
+  expect(input('termsAccepted').element.checked).toBe(false)
+})
+
+it('recalculates the age limit when the UTC day changes after opening the form', async () => {
+  vi.setSystemTime(new Date('2026-11-13T23:59:00Z'))
+  try {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(Response.json({}, { status: 503 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { button, input, readTerms, fillForm, submit } = await openRegistration()
+    await fillForm()
+    await input('birthDate').setValue('2008-11-14')
+    await readTerms()
+    await button('Accepter').trigger('click')
+    await submit()
+    expect(fetchMock).not.toHaveBeenCalled()
+
+    vi.setSystemTime(new Date('2026-11-14T00:01:00Z'))
+    await submit()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    await flushPromises()
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 it.each([

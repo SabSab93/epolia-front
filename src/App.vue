@@ -5,7 +5,15 @@
     label="Vérification de la session…"
     :class="showSessionLoader ? 'epolia-screen-padding bg-epolia-page' : 'sr-only'"
   />
-  <RouterView v-if="auth.isAuthenticated || !route.matched.some(({ meta }) => meta.requiresAuth)" />
+  <RouterView
+    v-if="auth.isAuthenticated || !route.matched.some(({ meta }) => meta.requiresAuth)"
+    v-slot="{ Component, route: currentRoute }"
+  >
+    <component
+      :is="Component"
+      :key="currentRoute.name === 'register' ? String(currentRoute.query.role) : undefined"
+    />
+  </RouterView>
 </template>
 
 <script setup lang="ts">
