@@ -23,7 +23,7 @@ export function createAppRouter(history: RouterHistory, pinia?: Pinia) {
         path: '/inscription/choix-du-compte',
         name: 'choose-role',
         meta: { title: 'Choisir un type de compte' },
-        component: () => import('@/domains/auth/views/ChooseRoleView.vue'),
+        component: () => import('@/domains/auth/views/AccountRoleSelection.vue'),
       },
       {
         path: '/inscription',
