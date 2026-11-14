@@ -76,6 +76,8 @@
   --color-epolia-input-readonly: var(--color-epolia-secondary-hover);
   --color-epolia-border: #cbd5e1;
   --color-epolia-focus: var(--color-epolia-text);
+  /* Veil behind modals. */
+  --color-epolia-overlay: color-mix(in srgb, var(--color-epolia-text) 50%, transparent);
 }
 
 :root {
