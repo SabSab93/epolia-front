@@ -9,6 +9,7 @@ describe('BaseButton', () => {
     expect(wrapper.element.tagName).toBe('BUTTON')
     expect(wrapper.attributes('type')).toBe('button')
     expect(wrapper.text()).toBe('Continuer')
+    expect(wrapper.classes()).toContain('bg-epolia-primary')
   })
 
   it('forwards an explicit submit type and accessibility attributes', () => {
@@ -45,7 +46,7 @@ describe('BaseButton', () => {
     expect(wrapper.findComponent(BaseLoader).props('decorative')).toBe(true)
     expect(wrapper.findComponent(BaseLoader).props('inheritColor')).toBe(true)
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
-    expect(wrapper.classes()).not.toContain('disabled:opacity-50')
+    expect(wrapper.classes()).not.toContain('disabled:bg-epolia-input-disabled')
     await wrapper.setProps({ loading: false })
     expect(wrapper.attributes('aria-busy')).toBeUndefined()
     expect((wrapper.element as HTMLButtonElement).disabled).toBe(false)

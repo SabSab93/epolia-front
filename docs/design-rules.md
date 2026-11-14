@@ -39,6 +39,9 @@ Centraliser les valeurs visuelles récurrentes dans le thème en réutilisant
 d’abord les tokens disponibles. Réserver le CSS spécifique aux besoins non
 couverts de façon lisible, comme les zones sûres ou le contraste forcé.
 
+Pour l’arrondi commun, utiliser `rounded-epolia` (8 px à 16 px de base).
+Le token `--radius-epolia` est centralisé dans `src/assets/main.css`.
+
 ## Typographie et fonds
 
 Deux styles suffisent pour les textes : `text-epolia-body` (16 px) et
@@ -83,12 +86,13 @@ Les licences originales accompagnent les fichiers, sans appel à un CDN.
   doivent pas être confondues avec les pixels CSS ou physiques.
 - Une action principale par groupe. Libellé explicite : « Enregistrer » plutôt
   que « OK ». Un bouton déclenche une action ; un lien sert à naviguer.
-- Un seul composant **`BaseButton`** : `default` rempli pour l'action principale,
+- Un seul composant **`BaseButton`** : `primary` rempli pour l'action principale,
   `secondary` avec contour pour l'alternative, `tertiary` sans contour pour
   l'action discrète. Le nom `outline` n'est pas une quatrième variante.
 - Même taille tactile pour les trois variantes ; `type="button"` par défaut,
   `type="submit"` explicite pour envoyer un formulaire.
 - États à prévoir : normal, appuyé, focus visible, désactivé, chargement.
+  Les boutons remplis ou à contour gardent un fond neutre, une bordure et un texte lisible quand ils sont désactivés.
   Le chargement conserve le libellé et bloque les doubles clics ; il ne remplace
   pas l'idempotence serveur. Respecter la réduction des animations.
 - Label visible associé à chaque champ ; aide/erreur reliée avec

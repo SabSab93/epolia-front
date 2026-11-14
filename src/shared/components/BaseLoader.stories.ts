@@ -5,7 +5,7 @@ import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 
 type LoaderStoryArgs = InstanceType<typeof BaseLoader>['$props'] & {
-  buttonVariant: 'default' | 'secondary' | 'tertiary'
+  buttonVariant: NonNullable<InstanceType<typeof BaseButton>['$props']['variant']>
 }
 
 const meta = {
@@ -17,7 +17,7 @@ const meta = {
     loading: true,
     decorative: false,
     showLabel: true,
-    buttonVariant: 'default',
+    buttonVariant: 'primary',
   },
   argTypes: {
     label: { name: 'Libellé', control: 'text' },
@@ -70,7 +70,7 @@ export const InControl = {
     buttonVariant: {
       name: 'Variante du bouton',
       control: 'select',
-      options: ['default', 'secondary', 'tertiary'],
+      options: ['primary', 'secondary', 'tertiary'],
       table: { disable: false },
     },
   },
