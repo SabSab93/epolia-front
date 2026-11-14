@@ -1,5 +1,5 @@
 import { computed, ref, watch } from 'vue'
-import { useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
+import { onBeforeRouteLeave, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import { ApiError } from '@/shared/api/apiClient'
 
@@ -12,6 +12,11 @@ export function useLoginForm() {
   const passwordError = ref('')
   const formError = ref('')
   const submitting = ref(false)
+  let departures = 0
+
+  onBeforeRouteLeave(() => {
+    departures += 1
+  })
 
   watch(email, () => {
     emailError.value = ''
@@ -47,6 +52,7 @@ export function useLoginForm() {
     if (passwordError.value) return 'password'
 
     const origin = router.currentRoute.value
+    const departure = departures
     submitting.value = true
     try {
       await auth.login({ email: address, password: password.value })
@@ -66,18 +72,20 @@ export function useLoginForm() {
       submitting.value = false
     }
 
-    await continueToSession(origin)
+    await continueToSession(origin, departure)
   }
 
   async function retrySession() {
     const origin = router.currentRoute.value
+    const departure = departures
     formError.value = ''
     await auth.restore()
-    await continueToSession(origin)
+    await continueToSession(origin, departure)
   }
 
-  async function continueToSession(origin: RouteLocationNormalizedLoaded) {
-    if (router.currentRoute.value !== origin || !auth.isAuthenticated) return
+  async function continueToSession(origin: RouteLocationNormalizedLoaded, departure: number) {
+    if (departures !== departure || router.currentRoute.value !== origin || !auth.isAuthenticated)
+      return
 
     const destination = origin.redirectedFrom
     if (destination?.matched.some(({ meta }) => meta.requiresAuth)) {

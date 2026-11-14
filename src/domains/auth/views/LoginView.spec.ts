@@ -104,3 +104,57 @@ it.each([
   expect(input('email').element.value).toBe(email)
   expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
 })
+
+it('preserves a departure requested while login is pending', async () => {
+  const reply = deferred<Response>()
+  const departure = deferred<void>()
+  const guardStarted = deferred<void>()
+  vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockReturnValue(reply.promise))
+  const { auth, router, submit, fillForm } = await openLogin()
+  router.beforeEach((to) => {
+    if (to.name === 'choose-role') {
+      guardStarted.resolve()
+      return departure.promise
+    }
+  })
+
+  await fillForm()
+  await submit()
+  const navigation = router.push({ name: 'choose-role' })
+  await guardStarted.promise
+  reply.resolve(
+    Response.json({
+      user: { id: 'demo', email, roles: [AccountRoleEnum.Customer], status: 'ACTIVE' },
+      accessToken: 'test-token',
+    }),
+  )
+  try {
+    await flushPromises()
+    expect(auth.isAuthenticated).toBe(true)
+    expect(router.currentRoute.value.name).toBe('login')
+  } finally {
+    departure.resolve()
+    await navigation
+  }
+  expect(router.currentRoute.value.name).toBe('choose-role')
+})
+
+it('hides the session retry action while showing a login error', async () => {
+  sessionStorage.setItem('epolia.access-token', 'previous-token')
+  const request = vi
+    .fn<typeof fetch>()
+    .mockRejectedValueOnce(new TypeError('Network offline'))
+    .mockResolvedValueOnce(Response.json({}, { status: 401 }))
+  vi.stubGlobal('fetch', request)
+  const { auth, wrapper, submit, fillForm } = await openLogin()
+
+  expect(auth.status).toBe('unavailable')
+  expect(wrapper.findAll('button').some((button) => button.text() === 'Réessayer')).toBe(true)
+  await fillForm()
+  await submit()
+  await flushPromises()
+
+  expect(wrapper.get('[role="alert"]').text()).toBe('Adresse e-mail ou mot de passe incorrect.')
+  expect(wrapper.findAll('button').some((button) => button.text() === 'Réessayer')).toBe(false)
+  expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+})

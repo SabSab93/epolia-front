@@ -3,7 +3,7 @@
     <div class="flex flex-col gap-epolia-md">
       <BaseAlert :message="formError || sessionMessage" variant="error" announcement="assertive" />
       <BaseButton
-        v-if="auth.status === 'unavailable'"
+        v-if="auth.status === 'unavailable' && !formError"
         label="Réessayer"
         variant="secondary"
         :loading="auth.isRestoring"
