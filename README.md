@@ -102,6 +102,12 @@ besoin.
 | -------------- | --------------------------- | ----------------------- |
 | `VITE_API_URL` | URL de base de l'API Epolia | `http://localhost:3000` |
 
+Le texte des [CGU de démonstration](src/domains/auth/content/cgu-test-v1.json)
+est séparé du formulaire et porte la version `cgu-test-v1`. Configurer la même valeur dans `REGISTRATION_TERMS_VERSION` sur
+l’API de test. Pour un build de démonstration, définir aussi
+`VITE_REGISTRATION_TERMS_VERSION=cgu-test-v1` avant compilation. Utiliser des
+données fictives pour ce parcours de démonstration.
+
 Ne jamais commiter de secret. Seules les valeurs non sensibles doivent apparaitre
 dans `.env.example`.
 

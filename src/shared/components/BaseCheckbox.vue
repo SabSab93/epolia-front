@@ -5,7 +5,7 @@
       class="checkbox-layout col-span-2 grid min-h-12 items-start gap-x-epolia-xs rounded-lg text-epolia-body text-epolia-text"
       :class="disabled ? 'cursor-not-allowed' : 'cursor-pointer'"
     >
-      <span class="flex size-12 items-center justify-center">
+      <span class="flex min-h-12 items-center">
         <input
           v-bind="attrs"
           :id="inputId"
@@ -90,7 +90,7 @@ function describedBy() {
 
 <style scoped>
 .checkbox-layout {
-  grid-template-columns: 3rem minmax(0, 1fr);
+  grid-template-columns: 1.5rem minmax(0, 1fr);
 }
 
 .checkbox {
