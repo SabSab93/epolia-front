@@ -26,6 +26,7 @@ const props = defineProps<{
   title: string
   backTo: RouteLocationRaw
   backLabel: string
+  backAction?: () => void
   wide?: boolean
 }>()
 defineSlots<{
@@ -39,6 +40,11 @@ const content = useTemplateRef('content')
 onMounted(() => content.value?.focus())
 
 function goBack() {
+  if (props.backAction) {
+    props.backAction()
+    return
+  }
+
   const destination = router.resolve(props.backTo)
 
   if (router.options.history.state.back === destination.fullPath) {

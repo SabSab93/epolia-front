@@ -1,0 +1,31 @@
+{
+  "version": "cgu-test-v1",
+  "title": "CGU à compléter",
+  "introduction": "Ce document provisoire sert à tester le parcours d’inscription. Utilisez des données fictives.",
+  "sections": [
+    {
+      "title": "Utilisation de la plateforme",
+      "paragraphs": [
+        "Cette section présentera le fonctionnement d’Epolia et les conditions d’accès pour les particuliers et les étudiants."
+      ]
+    },
+    {
+      "title": "Compte et profil",
+      "paragraphs": [
+        "Cette section expliquera la création du compte, les informations du profil et les possibilités de modification ou de suppression."
+      ]
+    },
+    {
+      "title": "Missions et échanges",
+      "paragraphs": [
+        "Cette section décrira la publication d’une mission, les échanges entre utilisateurs et les responsabilités de chacun."
+      ]
+    },
+    {
+      "title": "Assistance",
+      "paragraphs": [
+        "Cette section indiquera comment contacter l’équipe et obtenir de l’aide en cas de difficulté."
+      ]
+    }
+  ]
+}
