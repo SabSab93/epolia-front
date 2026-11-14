@@ -1,13 +1,16 @@
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
 import {
+  activateRole as activateRoleRequest,
   fetchCurrentUser,
   login as loginRequest,
   register as registerRequest,
 } from '@/domains/auth/api/authApi'
 import type { LoginInputDto } from '@/domains/auth/models/dtos/loginInput.dto'
 import type { RegisterInputDto } from '@/domains/auth/models/dtos/registerInput.dto'
+import type { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import type { AuthUserType } from '@/domains/auth/models/types/authUser.type'
+import type { SessionClearReasonType } from '@/domains/auth/models/types/sessionClearReason.type'
 import type { SessionStatusType } from '@/domains/auth/models/types/sessionStatus.type'
 import { readAccessToken, writeAccessToken } from '@/domains/auth/stores/sessionStorage'
 import { ApiError } from '@/shared/api/apiClient'
@@ -39,7 +42,13 @@ export const useAuthStore = defineStore('auth', () => {
     return write
   }
 
-  function clearSession(reason: 'anonymous' | 'expired' | 'forbidden') {
+  function cancelRestoration() {
+    restoration.value?.controller.abort()
+    restoration.value = undefined
+  }
+
+  function clearSession(reason: SessionClearReasonType) {
+    cancelRestoration()
     accessToken = null
     storageRead = true
     user.value = null
@@ -109,8 +118,7 @@ export const useAuthStore = defineStore('auth', () => {
       const session = await request(controller.signal)
       ensureNotAborted(controller.signal)
 
-      restoration.value?.controller.abort()
-      restoration.value = undefined
+      cancelRestoration()
       const write = persistToken(session.accessToken)
         .then(
           () => true,
@@ -154,12 +162,27 @@ export const useAuthStore = defineStore('auth', () => {
     return authenticate((signal) => registerRequest(input, signal))
   }
 
+  function activateRole(role: AccountRoleEnum) {
+    const token = accessToken
+    if (!token) throw new Error('Authentication required')
+
+    return authenticate(async (signal) => {
+      try {
+        return await activateRoleRequest(role, token, signal)
+      } catch (error) {
+        if (!signal.aborted && error instanceof ApiError) {
+          if (error.status === 401) await clearSession('expired')
+          if (error.code === 'ACCOUNT_NOT_ACTIVE') await clearSession('forbidden')
+        }
+        throw error
+      }
+    })
+  }
+
   function logout() {
     credentials?.abort()
     credentials = undefined
     sessionWrite = undefined
-    restoration.value?.controller.abort()
-    restoration.value = undefined
     return clearSession('anonymous')
   }
 
@@ -173,6 +196,7 @@ export const useAuthStore = defineStore('auth', () => {
     restore,
     login,
     register,
+    activateRole,
     logout,
   }
 })

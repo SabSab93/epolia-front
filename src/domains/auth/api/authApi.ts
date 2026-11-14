@@ -2,6 +2,7 @@ import { parseAccountRole } from '@/domains/auth/accountRole'
 import type { AuthSessionDto } from '@/domains/auth/models/dtos/authSession.dto'
 import type { LoginInputDto } from '@/domains/auth/models/dtos/loginInput.dto'
 import type { RegisterInputDto } from '@/domains/auth/models/dtos/registerInput.dto'
+import type { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import type { AuthUserType } from '@/domains/auth/models/types/authUser.type'
 import type { UserRoleType } from '@/domains/auth/models/types/userRole.type'
 import { apiFetch } from '@/shared/api/apiClient'
@@ -26,13 +27,16 @@ function isAuthUser(value: unknown): value is AuthUserType {
 }
 
 async function authenticate(
-  path: '/api/auth/login' | '/api/auth/register',
-  input: LoginInputDto | RegisterInputDto,
+  path: '/api/auth/login' | '/api/auth/register' | '/api/auth/roles',
+  input: LoginInputDto | RegisterInputDto | { role: AccountRoleEnum },
   signal?: AbortSignal,
+  accessToken?: string,
 ): Promise<AuthSessionDto> {
+  const headers = new Headers({ 'Content-Type': 'application/json' })
+  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)
   const response = await apiFetch(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(input),
     signal,
   })
@@ -60,6 +64,10 @@ export function login(input: LoginInputDto, signal?: AbortSignal) {
 
 export function register(input: RegisterInputDto, signal?: AbortSignal) {
   return authenticate('/api/auth/register', input, signal)
+}
+
+export function activateRole(role: AccountRoleEnum, accessToken: string, signal?: AbortSignal) {
+  return authenticate('/api/auth/roles', { role }, signal, accessToken)
 }
 
 export async function fetchCurrentUser(

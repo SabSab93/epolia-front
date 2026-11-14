@@ -32,6 +32,13 @@ export function createAppRouter(history: RouterHistory, pinia?: Pinia) {
         component: () => import('@/domains/auth/views/RegisterView.vue'),
       },
       {
+        path: '/compte/inscription/:role',
+        name: 'additional-role',
+        meta: { title: 'Ajouter un rôle', requiresAuth: true },
+        props: (to) => ({ role: parseAccountRole(to.params.role) }),
+        component: () => import('@/domains/auth/views/AdditionalRoleRegistration.vue'),
+      },
+      {
         path: '/connexion',
         name: 'login',
         meta: { title: 'Se connecter' },
@@ -43,6 +50,9 @@ export function createAppRouter(history: RouterHistory, pinia?: Pinia) {
   router.beforeEach(async (to) => {
     if (to.name === 'register' && !parseAccountRole(to.query.role)) {
       return { name: 'choose-role' }
+    }
+    if (to.name === 'additional-role' && !parseAccountRole(to.params.role)) {
+      return { name: 'home', replace: true }
     }
     if (to.matched.some(({ meta }) => meta.requiresAuth)) {
       const auth = useAuthStore(pinia)

@@ -64,7 +64,7 @@ describe('private routes', () => {
 
     // Leave a private route in history before using the real logout action.
     await router.push('/')
-    const logout = wrapper.get('button')
+    const logout = wrapper.findAll('button').find((button) => button.text() === 'Se déconnecter')!
     logout.element.focus()
     await logout.trigger('click')
     expect(auth.isAuthenticated).toBe(false)
@@ -100,7 +100,7 @@ describe('private routes', () => {
     await wrapper.get('button').trigger('click')
     expect(wrapper.get('button').attributes('aria-busy')).toBe('true')
     retry.resolve(Response.json({ id: 'user-id', email: null, roles: [AccountRoleEnum.Customer] }))
-    await vi.waitFor(() => expect(wrapper.get('button').text()).toBe('Se déconnecter'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Se déconnecter'))
     expect(router.currentRoute.value.name).toBe('home')
     await vi.waitFor(() => expect(document.activeElement).toBe(wrapper.get('main').element))
   })
@@ -154,9 +154,10 @@ describe('private routes', () => {
     const { pinia, router } = setup()
     await router.push('/')
     const wrapper = mount(App, { attachTo: document.body, global: { plugins: [pinia, router] } })
-    await vi.waitFor(() => expect(wrapper.get('button').text()).toBe('Se déconnecter'))
-    wrapper.get('button').element.focus()
-    await wrapper.get('button').trigger('click')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Se déconnecter'))
+    const logout = wrapper.findAll('button').find((button) => button.text() === 'Se déconnecter')!
+    logout.element.focus()
+    await logout.trigger('click')
     await vi.waitFor(() => expect(wrapper.text()).toContain('n’a pas pu être effacé'))
     expect(wrapper.get('button').text()).toBe('Se déconnecter')
     expect(wrapper.text()).not.toContain('Vous êtes déconnecté.')
@@ -181,5 +182,67 @@ describe('private routes', () => {
     await auth.logout()
     await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('login'))
     expect(wrapper.text()).not.toContain('Données privées')
+  })
+})
+
+describe('adding a role to the current account', () => {
+  it.each([
+    [AccountRoleEnum.Customer, AccountRoleEnum.Student, 'étudiant'],
+    [AccountRoleEnum.Student, AccountRoleEnum.Customer, 'particulier'],
+  ])('opens the role-specific registration for %s', async (currentRole, newRole, label) => {
+    vi.mocked(readAccessToken).mockResolvedValue('stored-token')
+    const user = { id: 'user-id', email: null, roles: [currentRole] }
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (url) => {
+      if (new URL(String(url)).pathname === '/api/auth/roles') {
+        return Response.json({
+          user: { ...user, roles: [currentRole, newRole], status: 'ACTIVE' },
+          accessToken: 'updated-token',
+        })
+      }
+      return Response.json(user)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const { pinia, router, auth } = setup()
+    await router.push('/')
+    const wrapper = mount(App, { attachTo: document.body, global: { plugins: [pinia, router] } })
+    const trigger = 'header button[aria-label="Options du compte"]'
+    await vi.waitFor(() => expect(wrapper.find(trigger).exists()).toBe(true))
+
+    await wrapper.get(trigger).trigger('click')
+    const action = document.body.querySelector<HTMLButtonElement>(
+      '[role="dialog"][aria-label="Options du compte"] button',
+    )!
+    expect(action.textContent?.trim()).toBe(`M’inscrire comme ${label}`)
+    action.click()
+
+    await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe(`Inscription comme ${label}`))
+    expect(wrapper.find('input').exists()).toBe(false)
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/api/auth/roles'))).toBe(
+      false,
+    )
+    const submit = wrapper.get<HTMLButtonElement>('button[type="submit"]').element
+    submit.focus()
+    submit.click()
+
+    await vi.waitFor(() =>
+      expect(document.activeElement?.textContent).toBe(
+        `Le rôle ${label} est actif sur votre compte.`,
+      ),
+    )
+    expect(auth.user?.id).toBe(user.id)
+    expect(auth.user?.roles).toEqual([currentRole, newRole])
+    expect(writeAccessToken).toHaveBeenCalledWith('updated-token')
+    const [, request] = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith('/api/auth/roles'),
+    )!
+    expect(request?.method).toBe('POST')
+    expect(new Headers(request?.headers).get('Authorization')).toBe('Bearer stored-token')
+    expect(JSON.parse(String(request?.body))).toEqual({ role: newRole })
+  })
+
+  it('protects a direct link to role registration', async () => {
+    const { router } = setup()
+    await router.push({ name: 'additional-role', params: { role: AccountRoleEnum.Student } })
+    expect(router.currentRoute.value.name).toBe('login')
   })
 })
