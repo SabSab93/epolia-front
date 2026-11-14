@@ -1,25 +1,39 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { parseAccountRole } from '@/domains/auth/accountRole'
+import { AccountRole } from '@/domains/auth/models/enums/AccountRole'
 import AuthLink from '@/domains/auth/components/AuthLink.vue'
 import AuthLayout from '@/domains/auth/components/AuthLayout.vue'
+import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseCardButton from '@/shared/components/BaseCardButton.vue'
 
-const selectedRole = ref<string>()
+const route = useRoute()
+const router = useRouter()
+const selectedRole = ref(parseAccountRole(route.query.role))
 
 const roleOptions = [
   {
-    value: 'CUSTOMER',
+    value: AccountRole.Customer,
     label: 'Je suis particulier',
     description:
       'Décrivez votre besoin et trouvez un étudiant pour vous aider, par exemple pour des cours, un dépannage informatique ou un projet créatif.',
   },
   {
-    value: 'STUDENT',
+    value: AccountRole.Student,
     label: 'Je suis étudiant',
     description:
       'Présentez vos compétences, proposez vos services et choisissez des missions qui s’accordent avec votre emploi du temps.',
   },
-]
+] as const
+
+async function continueToRegistration() {
+  const role = selectedRole.value
+  if (!role) return
+
+  await router.replace({ name: 'choose-role', query: { role } })
+  await router.push({ name: 'register', query: { role } })
+}
 </script>
 
 <template>
@@ -40,6 +54,14 @@ const roleOptions = [
         @click="selectedRole = option.value"
       />
     </div>
+
+    <BaseButton
+      label="Continuer"
+      variant="primary"
+      class="mt-epolia-lg w-full"
+      :disabled="!selectedRole"
+      @click="continueToRegistration"
+    />
 
     <template #links>
       <AuthLink :to="{ name: 'login' }">Se connecter</AuthLink>

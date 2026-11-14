@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import App from '@/App.vue'
+import { AccountRole } from '@/domains/auth/models/enums/AccountRole'
 import router from '@/router'
 import HomeView from '@/HomeView.vue'
 
@@ -58,6 +59,8 @@ it('navigates through the public auth screens and restores focus on return to th
     'Présentez vos compétences, proposez vos services et choisissez des missions qui s’accordent avec votre emploi du temps.',
   ])
 
+  const continueButton = wrapper.get('button:disabled')
+  expect(continueButton.text()).toBe('Continuer')
   expect(roleOptions.map((option) => option.attributes('aria-pressed'))).toEqual(['false', 'false'])
   await roleOptions[0]!.trigger('click')
   expect(roleOptions.map((option) => option.attributes('aria-pressed'))).toEqual(['true', 'false'])
@@ -65,11 +68,18 @@ it('navigates through the public auth screens and restores focus on return to th
   expect(roleOptions.map((option) => option.attributes('aria-pressed'))).toEqual(['false', 'true'])
   expect(testRouter.currentRoute.value.name).toBe('choose-role')
 
-  await testRouter.push('/inscription')
+  expect(continueButton.attributes('disabled')).toBeUndefined()
+  await continueButton.trigger('click')
   await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe('Créer un compte'))
+  expect(testRouter.currentRoute.value.query.role).toBe(AccountRole.Student)
+  expect(wrapper.text()).toContain('Compte étudiant')
 
   await wrapper.get('button').trigger('click')
   await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe('Qui êtes-vous ?'))
+
+  expect(wrapper.get('button[aria-pressed="true"]').attributes('aria-labelledby')).toBe(
+    wrapper.get('[role="group"]').findAll('h2')[1]!.attributes('id'),
+  )
 
   await wrapper.get('a[href="/connexion"]').trigger('click')
   await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe('Se connecter'))
@@ -96,9 +106,22 @@ it('leaves an auth screen out of the back history when returning to a different 
 
 it('keeps the return destination inside the app when registration is opened directly', async () => {
   const testRouter = createTestRouter()
-  await testRouter.push('/inscription')
+  await testRouter.push({ name: 'register', query: { role: AccountRole.Customer } })
   const wrapper = mount(App, { global: { plugins: [createPinia(), testRouter] } })
 
   await wrapper.get('button').trigger('click')
   await vi.waitFor(() => expect(testRouter.currentRoute.value.name).toBe('choose-role'))
 })
+
+it.each([
+  '/inscription',
+  '/inscription?role=ADMIN',
+  `/inscription?role=${AccountRole.Student}&role=${AccountRole.Customer}`,
+])(
+  'redirects an incomplete or invalid registration link (%s) to the account choice',
+  async (address) => {
+    const testRouter = createTestRouter()
+    await testRouter.push(address)
+    expect(testRouter.currentRoute.value.name).toBe('choose-role')
+  },
+)

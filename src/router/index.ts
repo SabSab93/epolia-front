@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/HomeView.vue'
+import { parseAccountRole } from '@/domains/auth/accountRole'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +20,9 @@ const router = createRouter({
       path: '/inscription',
       name: 'register',
       meta: { title: 'Créer un compte' },
+      beforeEnter: (to) => {
+        if (!parseAccountRole(to.query.role)) return { name: 'choose-role' }
+      },
       component: () => import('@/domains/auth/views/RegisterView.vue'),
     },
     {
