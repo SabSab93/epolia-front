@@ -20,6 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<AuthUserType | null>(null)
   const status = ref<SessionStatusType>('idle')
   const removalFailed = ref(false)
+  const persistenceFailed = ref(false)
   const isAuthenticated = computed(() => user.value !== null)
 
   // Keep only the confirmed user in shared reactive state. The token stays private.
@@ -42,6 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken = null
     storageRead = true
     user.value = null
+    persistenceFailed.value = false
     status.value = reason
     return persistToken(null).then(
       () => {
@@ -63,7 +65,9 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       if (!accessToken) {
-        if (status.value === 'idle') status.value = 'anonymous'
+        if (status.value === 'idle' || status.value === 'unavailable') {
+          status.value = 'anonymous'
+        }
         return
       }
 
@@ -107,14 +111,30 @@ export const useAuthStore = defineStore('auth', () => {
 
       restoration.value?.controller.abort()
       restoration.value = undefined
-      const write = persistToken(session.accessToken).then(() => {
-        ensureNotAborted(controller.signal)
-        accessToken = session.accessToken
-        storageRead = true
-        user.value = session.user
-        status.value = 'authenticated'
-        removalFailed.value = false
-      })
+      const write = persistToken(session.accessToken)
+        .then(
+          () => true,
+          () => false,
+        )
+        .then(async (saved) => {
+          ensureNotAborted(controller.signal)
+          if (!saved) {
+            // Avoid restoring a previous account after a failed token replacement.
+            const removed = await persistToken(null).then(
+              () => true,
+              () => false,
+            )
+            ensureNotAborted(controller.signal)
+            removalFailed.value = !removed
+          } else {
+            removalFailed.value = false
+          }
+          accessToken = session.accessToken
+          storageRead = true
+          user.value = session.user
+          status.value = 'authenticated'
+          persistenceFailed.value = !saved
+        })
       sessionWrite = write.catch(() => {})
       await write
       return session.user
@@ -147,6 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     status,
     removalFailed,
+    persistenceFailed,
     isAuthenticated,
     isRestoring,
     restore,

@@ -37,6 +37,7 @@ it('navigates through the public auth screens and restores focus on return to th
     global: { plugins: [createPinia(), testRouter] },
   })
 
+  await vi.waitFor(() => expect(wrapper.get('button').text()).toBe('S’inscrire'))
   await wrapper.get('button').trigger('click')
   await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe('Qui êtes-vous ?'))
   expect(document.activeElement).toBe(wrapper.get('main').element)

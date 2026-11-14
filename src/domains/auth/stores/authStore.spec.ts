@@ -120,6 +120,40 @@ describe('auth session', () => {
     expect(auth.user).toEqual(user)
   })
 
+  it('returns to the anonymous state when a retry finds an empty storage', async () => {
+    vi.mocked(readAccessToken).mockRejectedValueOnce(new Error('Storage unavailable'))
+    const auth = useAuthStore(createPinia())
+
+    await auth.restore()
+    expect(auth.status).toBe('unavailable')
+    await auth.restore()
+
+    expect(auth.status).toBe('anonymous')
+    expect(auth.user).toBeNull()
+  })
+
+  it('keeps a successful registration in memory when saving the token fails', async () => {
+    vi.mocked(writeAccessToken).mockRejectedValueOnce(new Error('Storage unavailable'))
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(json(signedIn, 201))
+        .mockResolvedValueOnce(json(user)),
+    )
+    const auth = useAuthStore(createPinia())
+
+    await expect(auth.register(registerInput)).resolves.toEqual(signedIn.user)
+    expect(auth.isAuthenticated).toBe(true)
+    expect(auth.persistenceFailed).toBe(true)
+    expect(vi.mocked(writeAccessToken).mock.calls).toEqual([['test-token'], [null]])
+
+    await auth.restore()
+    expect(auth.user).toEqual(user)
+    await auth.logout()
+    expect(auth.persistenceFailed).toBe(false)
+  })
+
   it('rejects an invalid success response without persisting a token', async () => {
     vi.stubGlobal(
       'fetch',

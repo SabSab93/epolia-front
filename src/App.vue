@@ -1,7 +1,10 @@
 <template>
-  <div v-if="showSessionLoader" class="flex justify-center bg-epolia-page p-epolia-md">
-    <BaseLoader label="Vérification de la session…" />
-  </div>
+  <BaseLoader
+    v-if="route.name !== 'home'"
+    :loading="showSessionLoader"
+    label="Vérification de la session…"
+    :class="showSessionLoader ? 'epolia-screen-padding bg-epolia-page' : 'sr-only'"
+  />
   <RouterView v-if="auth.isAuthenticated || !route.matched.some(({ meta }) => meta.requiresAuth)" />
 </template>
 

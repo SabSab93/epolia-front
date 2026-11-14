@@ -6,7 +6,7 @@
         v-if="auth.status === 'unavailable'"
         label="Réessayer"
         variant="secondary"
-        :loading="retrying"
+        :loading="auth.isRestoring"
         @click="retrySession"
       />
       <BaseAlert
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import BaseAlert from '@/shared/components/BaseAlert.vue'
@@ -41,7 +41,6 @@ import AuthLayout from '@/domains/auth/components/AuthLayout.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
-const retrying = ref(false)
 const sessionMessage = computed(() => {
   switch (auth.status) {
     case 'expired':
@@ -56,9 +55,16 @@ const sessionMessage = computed(() => {
 })
 
 async function retrySession() {
-  retrying.value = true
+  const origin = router.currentRoute.value
   await auth.restore()
-  retrying.value = false
-  if (auth.isAuthenticated) await router.replace({ name: 'home' })
+  if (router.currentRoute.value !== origin || !auth.isAuthenticated) return
+
+  const destination = origin.redirectedFrom
+  if (destination?.matched.some(({ meta }) => meta.requiresAuth)) {
+    await router.replace(destination.fullPath)
+    return
+  }
+
+  await router.replace({ name: 'home' })
 }
 </script>

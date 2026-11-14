@@ -13,14 +13,33 @@
       </div>
 
       <div class="flex flex-col gap-epolia-xs">
+        <BaseLoader
+          :loading="checkingSession"
+          :class="checkingSession ? 'justify-center' : 'sr-only'"
+          label="Vérification de la session…"
+        />
+        <template v-if="auth.status === 'unavailable'">
+          <BaseAlert
+            message="Impossible de vérifier la session. Réessayez."
+            variant="error"
+            announcement="assertive"
+          />
+          <BaseButton
+            label="Réessayer"
+            variant="secondary"
+            :loading="auth.isRestoring"
+            @click="retrySession"
+          />
+        </template>
         <BaseButton
-          v-if="auth.isAuthenticated || auth.removalFailed"
+          v-else-if="auth.isAuthenticated || auth.removalFailed || signingOut"
           label="Se déconnecter"
           variant="secondary"
           class="w-full"
-          @click="auth.logout"
+          :loading="signingOut"
+          @click="signOut"
         />
-        <template v-else>
+        <template v-else-if="!auth.isRestoring">
           <BaseButton
             label="S’inscrire"
             variant="primary"
@@ -35,10 +54,27 @@
           />
         </template>
         <BaseAlert
-          v-if="auth.removalFailed"
-          message="La session n’a pas pu être effacée de l’appareil. Réessayez de vous déconnecter."
+          :message="
+            auth.removalFailed
+              ? 'Le jeton enregistré sur cet appareil n’a pas pu être effacé. Réessayez de vous déconnecter.'
+              : ''
+          "
           variant="error"
           announcement="assertive"
+        />
+        <BaseAlert
+          :message="
+            auth.isAuthenticated && auth.persistenceFailed
+              ? 'Votre nouvelle session est active. Elle n’a pas pu être enregistrée sur cet appareil.'
+              : ''
+          "
+          variant="warning"
+          announcement="polite"
+        />
+        <BaseAlert
+          :message="signedOut ? 'Vous êtes déconnecté.' : ''"
+          variant="success"
+          announcement="polite"
         />
       </div>
     </section>
@@ -46,16 +82,38 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
+import BaseLoader from '@/shared/components/BaseLoader.vue'
 import BaseTitle from '@/shared/components/BaseTitle.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
 const content = useTemplateRef('content')
+const signingOut = ref(false)
+const signedOut = ref(false)
+const checkingSession = computed(() => auth.isRestoring && auth.status !== 'unavailable')
 
 onMounted(() => content.value?.focus())
+
+async function retrySession() {
+  await auth.restore()
+  if (auth.status !== 'unavailable') {
+    await nextTick()
+    content.value?.focus()
+  }
+}
+
+async function signOut() {
+  signingOut.value = true
+  signedOut.value = false
+  await auth.logout()
+  signingOut.value = false
+  signedOut.value = !auth.removalFailed
+  await nextTick()
+  content.value?.focus()
+}
 </script>
