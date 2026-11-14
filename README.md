@@ -169,9 +169,17 @@ domains/auth/views/LoginView.vue
   -> API REST epolia-back
 ```
 
-Le composable pourra utiliser `domains/auth/stores/auth.store.ts` pour l'etat de
-session partage. Cette convention ne necessite pas de couches supplementaires
-de repositories, use-cases, adapters ou mappers sans besoin concret.
+Le store Pinia d'authentification partage la session entre les ecrans. Marquer
+une route privee avec `meta.requiresAuth` pour que le routeur verifie la session
+avant d'afficher la page. Au redemarrage, l'API `/api/auth/me` confirme la session
+avant tout acces prive.
+
+Seul le jeton de session est conserve sur l'appareil. Android utilise le
+Keystore et iOS le trousseau local, via
+[le plugin Capacitor Secure Storage](https://github.com/aparajita/capacitor-secure-storage/blob/v7.1.3/README.md).
+Executer `npm run cap:sync` apres installation. Dans le navigateur, Vite en
+developpement conserve le jeton dans `sessionStorage` pour le rechargement de
+l'onglet. Un build web le garde en memoire, jusqu'au rechargement.
 
 ## Hooks Git
 

@@ -1,5 +1,5 @@
-import { AccountRole } from '@/domains/auth/models/enums/AccountRole'
+import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 
-export function parseAccountRole(value: unknown): AccountRole | undefined {
-  return value === AccountRole.Customer || value === AccountRole.Student ? value : undefined
+export function parseAccountRole(value: unknown): AccountRoleEnum | undefined {
+  return value === AccountRoleEnum.Customer || value === AccountRoleEnum.Student ? value : undefined
 }

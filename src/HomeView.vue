@@ -14,16 +14,31 @@
 
       <div class="flex flex-col gap-epolia-xs">
         <BaseButton
-          label="S’inscrire"
-          variant="primary"
-          class="w-full"
-          @click="router.push({ name: 'choose-role' })"
-        />
-        <BaseButton
-          label="Se connecter"
+          v-if="auth.isAuthenticated || auth.removalFailed"
+          label="Se déconnecter"
           variant="secondary"
           class="w-full"
-          @click="router.push({ name: 'login' })"
+          @click="auth.logout"
+        />
+        <template v-else>
+          <BaseButton
+            label="S’inscrire"
+            variant="primary"
+            class="w-full"
+            @click="router.push({ name: 'choose-role' })"
+          />
+          <BaseButton
+            label="Se connecter"
+            variant="secondary"
+            class="w-full"
+            @click="router.push({ name: 'login' })"
+          />
+        </template>
+        <BaseAlert
+          v-if="auth.removalFailed"
+          message="La session n’a pas pu être effacée de l’appareil. Réessayez de vous déconnecter."
+          variant="error"
+          announcement="assertive"
         />
       </div>
     </section>
@@ -33,10 +48,13 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/domains/auth/stores/authStore'
+import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseTitle from '@/shared/components/BaseTitle.vue'
 
 const router = useRouter()
+const auth = useAuthStore()
 const content = useTemplateRef('content')
 
 onMounted(() => content.value?.focus())

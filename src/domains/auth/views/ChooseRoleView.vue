@@ -43,7 +43,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { parseAccountRole } from '@/domains/auth/accountRole'
-import { AccountRole } from '@/domains/auth/models/enums/AccountRole'
+import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import AuthLink from '@/domains/auth/components/AuthLink.vue'
 import AuthLayout from '@/domains/auth/components/AuthLayout.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
@@ -55,20 +55,20 @@ const selectedRole = computed(() => parseAccountRole(route.query.role))
 
 const roleOptions = [
   {
-    value: AccountRole.Customer,
+    value: AccountRoleEnum.Customer,
     label: 'Je suis particulier',
     description:
       'Décrivez votre besoin et trouvez un étudiant pour vous aider, par exemple pour des cours, un dépannage informatique ou un projet créatif.',
   },
   {
-    value: AccountRole.Student,
+    value: AccountRoleEnum.Student,
     label: 'Je suis étudiant',
     description:
       'Présentez vos compétences, proposez vos services et choisissez des missions qui s’accordent avec votre emploi du temps.',
   },
 ] as const
 
-function selectRole(role: AccountRole) {
+function selectRole(role: AccountRoleEnum) {
   return router.replace({ query: { ...route.query, role } })
 }
 
