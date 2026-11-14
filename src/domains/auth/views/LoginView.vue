@@ -1,12 +1,13 @@
 <template>
   <AuthLayout title="Se connecter" :back-to="{ name: 'home' }" back-label="Retour à l’accueil">
     <div class="flex flex-col gap-epolia-md">
-      <BaseAlert :message="sessionMessage" variant="error" announcement="assertive" />
+      <BaseAlert :message="formError || sessionMessage" variant="error" announcement="assertive" />
       <BaseButton
         v-if="auth.status === 'unavailable'"
         label="Réessayer"
         variant="secondary"
         :loading="auth.isRestoring"
+        :disabled="submitting"
         @click="retrySession"
       />
       <BaseAlert
@@ -21,7 +22,41 @@
         variant="secondary"
         @click="auth.logout"
       />
-      <p>Le formulaire de connexion est en cours de développement.</p>
+      <form
+        ref="form"
+        class="flex flex-col gap-epolia-md"
+        novalidate
+        :aria-busy="submitting"
+        @submit.prevent="submitForm"
+      >
+        <BaseInput
+          v-model="email"
+          name="email"
+          label="Adresse e-mail"
+          type="email"
+          autocomplete="username"
+          required
+          :disabled="submitting"
+          :error="emailError"
+        />
+        <BaseInput
+          v-model="password"
+          name="password"
+          label="Mot de passe"
+          type="password"
+          autocomplete="current-password"
+          :clearable="false"
+          required
+          :disabled="submitting"
+          :error="passwordError"
+        />
+        <BaseButton
+          label="Se connecter"
+          type="submit"
+          :loading="submitting"
+          :disabled="auth.isRestoring || auth.removalFailed"
+        />
+      </form>
     </div>
 
     <template #links>
@@ -31,40 +66,36 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/domains/auth/stores/authStore'
+import { nextTick, useTemplateRef } from 'vue'
+import { useLoginForm } from '@/domains/auth/composables/useLoginForm'
 import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
+import BaseInput from '@/shared/components/BaseInput.vue'
 import AuthLink from '@/domains/auth/components/AuthLink.vue'
 import AuthLayout from '@/domains/auth/components/AuthLayout.vue'
 
-const auth = useAuthStore()
-const router = useRouter()
-const sessionMessage = computed(() => {
-  switch (auth.status) {
-    case 'expired':
-      return 'Votre session a expiré. Connectez-vous de nouveau.'
-    case 'forbidden':
-      return 'L’accès à votre session a été refusé.'
-    case 'unavailable':
-      return 'Impossible de vérifier la session. Réessayez.'
-    default:
-      return ''
-  }
-})
+const form = useTemplateRef('form')
+const {
+  auth,
+  email,
+  password,
+  emailError,
+  passwordError,
+  formError,
+  submitting,
+  sessionMessage,
+  submit,
+  retrySession,
+} = useLoginForm()
 
-async function retrySession() {
-  const origin = router.currentRoute.value
-  await auth.restore()
-  if (router.currentRoute.value !== origin || !auth.isAuthenticated) return
+async function submitForm() {
+  const invalidField = await submit()
+  if (!invalidField) return
 
-  const destination = origin.redirectedFrom
-  if (destination?.matched.some(({ meta }) => meta.requiresAuth)) {
-    await router.replace(destination.fullPath)
-    return
-  }
-
-  await router.replace({ name: 'home' })
+  await nextTick()
+  const fields = form.value?.querySelectorAll('input') ?? []
+  Array.from(fields)
+    .find((field) => field.name === invalidField)
+    ?.focus()
 }
 </script>

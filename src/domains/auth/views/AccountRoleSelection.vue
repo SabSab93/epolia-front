@@ -40,18 +40,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { parseAccountRole } from '@/domains/auth/accountRole'
+import { useAccountRoleSelection } from '@/domains/auth/composables/useAccountRoleSelection'
 import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import AuthLink from '@/domains/auth/components/AuthLink.vue'
 import AuthLayout from '@/domains/auth/components/AuthLayout.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseCardButton from '@/shared/components/BaseCardButton.vue'
 
-const route = useRoute()
-const router = useRouter()
-const selectedRole = computed(() => parseAccountRole(route.query.role))
+const { selectedRole, selectRole, continueToRegistration } = useAccountRoleSelection()
 
 const roleOptions = [
   {
@@ -67,15 +63,4 @@ const roleOptions = [
       'Présentez vos compétences, proposez vos services et choisissez des missions qui s’accordent avec votre emploi du temps.',
   },
 ] as const
-
-function selectRole(role: AccountRoleEnum) {
-  return router.replace({ query: { ...route.query, role } })
-}
-
-function continueToRegistration() {
-  const role = selectedRole.value
-  if (!role) return
-
-  return router.push({ name: 'register', query: { role } })
-}
 </script>
