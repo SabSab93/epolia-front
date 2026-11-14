@@ -1,16 +1,16 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createMemoryHistory, createRouter } from 'vue-router'
+import { createMemoryHistory } from 'vue-router'
 import App from '@/App.vue'
 import { AccountRole } from '@/domains/auth/models/enums/AccountRole'
-import router from '@/router'
+import { createAppRouter } from '@/router'
 import HomeView from '@/HomeView.vue'
 
 enableAutoUnmount(afterEach)
 
 function createTestRouter() {
-  return createRouter({ history: createMemoryHistory(), routes: router.options.routes })
+  return createAppRouter(createMemoryHistory())
 }
 
 describe('HomeView', () => {
@@ -63,9 +63,19 @@ it('navigates through the public auth screens and restores focus on return to th
   expect(continueButton.text()).toBe('Continuer')
   expect(roleOptions.map((option) => option.attributes('aria-pressed'))).toEqual(['false', 'false'])
   await roleOptions[0]!.trigger('click')
-  expect(roleOptions.map((option) => option.attributes('aria-pressed'))).toEqual(['true', 'false'])
+  await vi.waitFor(() =>
+    expect(roleOptions.map((option) => option.attributes('aria-pressed'))).toEqual([
+      'true',
+      'false',
+    ]),
+  )
   await roleOptions[1]!.trigger('click')
-  expect(roleOptions.map((option) => option.attributes('aria-pressed'))).toEqual(['false', 'true'])
+  await vi.waitFor(() =>
+    expect(roleOptions.map((option) => option.attributes('aria-pressed'))).toEqual([
+      'false',
+      'true',
+    ]),
+  )
   expect(testRouter.currentRoute.value.name).toBe('choose-role')
 
   expect(continueButton.attributes('disabled')).toBeUndefined()
@@ -125,3 +135,36 @@ it.each([
     expect(testRouter.currentRoute.value.name).toBe('choose-role')
   },
 )
+
+it('validates a changed role while registration is already open', async () => {
+  const testRouter = createTestRouter()
+  await testRouter.push({ name: 'register', query: { role: AccountRole.Customer } })
+  expect(testRouter.currentRoute.value.name).toBe('register')
+
+  await testRouter.push({ name: 'register', query: { role: 'ADMIN' } })
+  expect(testRouter.currentRoute.value.name).toBe('choose-role')
+})
+
+it('restores the last account choice after returning from login', async () => {
+  const testRouter = createTestRouter()
+  await testRouter.push('/')
+  await testRouter.push({ name: 'choose-role', query: { role: AccountRole.Student } })
+  const wrapper = mount(App, { global: { plugins: [createPinia(), testRouter] } })
+
+  await wrapper.get('[role="group"] button[aria-pressed="false"]').trigger('click')
+  await vi.waitFor(() =>
+    expect(testRouter.currentRoute.value.query.role).toBe(AccountRole.Customer),
+  )
+  await wrapper.get('a[href="/connexion"]').trigger('click')
+  await vi.waitFor(() => expect(testRouter.currentRoute.value.name).toBe('login'))
+
+  testRouter.back()
+  await vi.waitFor(() => expect(testRouter.currentRoute.value.name).toBe('choose-role'))
+  expect(testRouter.currentRoute.value.query.role).toBe(AccountRole.Customer)
+  expect(
+    wrapper.findAll('[role="group"] button').map((button) => button.attributes('aria-pressed')),
+  ).toEqual(['true', 'false'])
+
+  testRouter.back()
+  await vi.waitFor(() => expect(testRouter.currentRoute.value.name).toBe('home'))
+})
