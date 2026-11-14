@@ -39,6 +39,62 @@ Toutes les couleurs sont définies une seule fois dans `main.css`, sous
 bordures et `ring-epolia-focus` pour le focus. Les états utilisent les suffixes
 `-hover` et `-active`. Aucun alias de couleur générique (`bg-primary`, etc.).
 
+## Icônes
+
+Les icônes sont celles du Figma : **Google Material Symbols** (style Outlined,
+licence Apache 2.0). Elles passent par
+[unplugin-icons](https://github.com/unplugin/unplugin-icons) (MIT) et les données
+`@iconify-json/material-symbols`, deux dépendances de développement. Chaque icône
+importée est compilée en composant Vue au build : rien n'est chargé au lancement
+(pas de CDN ni de police distante), l'app fonctionne hors ligne, et seules les
+icônes importées entrent dans le bundle.
+
+```vue
+<script setup lang="ts">
+import IconArrowForward from '~icons/material-symbols/arrow-forward'
+import BaseButton from '@/shared/components/BaseButton.vue'
+import BaseIcon from '@/shared/components/BaseIcon.vue'
+</script>
+
+<template>
+  <BaseButton label="Continuer">
+    <template #icon-right><BaseIcon :icon="IconArrowForward" :size="20" /></template>
+  </BaseButton>
+</template>
+```
+
+- **Trouver le nom** : nom Figma avec `_` remplacé par `-`. Style « Contour » =
+  suffixe `-outline` s'il existe (`favorite-outline`), « Plein » = nom seul
+  (`favorite`). Liste : [Iconify, Material Symbols](https://icon-sets.iconify.design/material-symbols/).
+- **Taille** : `:size="20"` dans un bouton, `24` (défaut) pour la navigation. En
+  rem, l'icône suit le zoom du texte. La zone tactile reste celle du contrôle parent.
+- **Couleur** : celle du texte (`currentColor`) ; la changer avec une classe de
+  token, par exemple `class="text-epolia-primary"`.
+- **Accessibilité** : sans `label`, l'icône est décorative et masquée aux lecteurs
+  d'écran (cas d'une icône à côté d'un texte). Avec `label`, elle est annoncée
+  comme une image. L'icône n'est jamais focusable. Une action sans texte devra
+  porter son nom sur le bouton (pas de bouton icône seule pour l'instant).
+- **BaseButton** : un seul slot à la fois, `icon-left` ou `icon-right` (le
+  composant ne le vérifie pas). Pendant
+  le chargement, le spinner prend la place de l'icône (à gauche sans icône).
+- **SVG de marque** (logo, pictogramme absent de Material Symbols) : un composant
+  Vue local contenant le `<svg>`, en `fill="currentColor"`, passé à `BaseIcon`.
+
+**Comparaison (novembre 2026).** Même jeu de 6 icônes (retour, recherche, accueil,
+favori, fermer, validé), mini-app Vite 7 + Vue 3.5, build de production, poids
+gzip du JS comparé à la même app sans icône :
+
+| Solution                          | Poids ajouté (gzip) | Requêtes ajoutées | Licence          | Cohérence avec le Figma              |
+| --------------------------------- | ------------------- | ----------------- | ---------------- | ------------------------------------ |
+| unplugin-icons + Material Symbols | 0,9 Ko              | 0                 | MIT / Apache 2.0 | Identique                            |
+| SVG locaux copiés à la main       | 0,9 Ko              | 0                 | Apache 2.0       | Identique, mais maintenance manuelle |
+| Lucide (`@lucide/vue`)            | 1,7 Ko              | 0                 | ISC              | Autre dessin                         |
+| Font Awesome Free (SVG + Vue)     | 27 Ko               | 0                 | MIT / CC BY 4.0  | Autre dessin                         |
+
+Pour reproduire : créer une app Vite + Vue vide, ajouter les six icônes avec
+chaque solution, lancer `vite build` et comparer la taille gzip de
+`dist/assets/*.js` à celle de l'app sans icône.
+
 ## Ajouter un composant
 
 Installer avec `npm ci`, puis ajouter uniquement le composant nécessaire :

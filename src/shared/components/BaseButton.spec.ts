@@ -1,6 +1,9 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
+import IconArrowForward from '~icons/material-symbols/arrow-forward'
 import BaseButton from '@/shared/components/BaseButton.vue'
+import BaseIcon from '@/shared/components/BaseIcon.vue'
 import BaseLoader from '@/shared/components/BaseLoader.vue'
 
 describe('BaseButton', () => {
@@ -51,4 +54,41 @@ describe('BaseButton', () => {
     expect(wrapper.attributes('aria-busy')).toBeUndefined()
     expect((wrapper.element as HTMLButtonElement).disabled).toBe(false)
   })
+
+  it.each([
+    ['icon-left', 0],
+    ['icon-right', 1],
+  ] as const)('places a decorative icon from the %s slot around the label', (slot, index) => {
+    const wrapper = mount(BaseButton, {
+      props: { label: 'Continuer' },
+      slots: { [slot]: () => h(BaseIcon, { icon: IconArrowForward, size: 20 }) },
+    })
+    const children = (wrapper.element as HTMLButtonElement).children
+    const icon = wrapper.get('svg')
+    expect(children).toHaveLength(2)
+    expect(children[index]).toBe(icon.element)
+    expect(icon.attributes('aria-hidden')).toBe('true')
+    expect(icon.attributes('tabindex')).toBeUndefined()
+    expect(wrapper.text()).toBe('Continuer')
+  })
+
+  it.each([
+    ['icon-left', 0],
+    ['icon-right', 1],
+  ] as const)(
+    'puts the spinner in place of the %s icon while loading, then restores it',
+    async (slot, index) => {
+      const wrapper = mount(BaseButton, {
+        props: { label: 'Envoyer', loading: true },
+        slots: { [slot]: () => h(BaseIcon, { icon: IconArrowForward, size: 20 }) },
+      })
+      const children = (wrapper.element as HTMLButtonElement).children
+      expect(children).toHaveLength(2)
+      expect(children[index]).toBe(wrapper.getComponent(BaseLoader).element)
+      expect(wrapper.findComponent(BaseIcon).exists()).toBe(false)
+      await wrapper.setProps({ loading: false })
+      expect(wrapper.findComponent(BaseLoader).exists()).toBe(false)
+      expect(wrapper.findComponent(BaseIcon).exists()).toBe(true)
+    },
+  )
 })
