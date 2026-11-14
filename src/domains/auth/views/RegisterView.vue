@@ -69,7 +69,6 @@
         label="Date de naissance"
         type="date"
         autocomplete="bday"
-        :max="today"
         :clearable="false"
         required
         :disabled="submitting"
@@ -87,7 +86,11 @@
         required
         :disabled="submitting"
       />
-      <div v-if="termsAvailable" ref="termsActions" class="flex flex-col items-start gap-epolia-xs">
+      <div
+        v-if="termsAvailable && !termsVersionRejected"
+        ref="termsActions"
+        class="flex flex-col items-start gap-epolia-xs"
+      >
         <BaseCheckbox
           :model-value="termsAccepted"
           name="termsAccepted"
@@ -119,7 +122,7 @@
         label="Créer mon compte"
         type="submit"
         :loading="submitting"
-        :disabled="!termsAvailable"
+        :disabled="!termsAvailable || termsVersionRejected"
       />
     </form>
 
@@ -133,7 +136,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, useTemplateRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { parseAccountRole } from '@/domains/auth/accountRole'
 import AuthLayout from '@/domains/auth/components/AuthLayout.vue'
 import AuthLink from '@/domains/auth/components/AuthLink.vue'
@@ -155,8 +158,6 @@ const role = computed(() => parseAccountRole(route.query.role))
 const demoTermsVersion = terms.version
 const termsAvailable =
   import.meta.env.DEV || import.meta.env.VITE_REGISTRATION_TERMS_VERSION === demoTermsVersion
-const today = new Date().toISOString().slice(0, 10)
-const adultBirthDateLimit = String(Number(today.slice(0, 4)) - 18) + today.slice(4)
 const firstName = ref('')
 const lastName = ref('')
 const email = ref('')
@@ -164,6 +165,7 @@ const birthDate = ref('')
 const password = ref('')
 const showTerms = ref(false)
 const termsAccepted = ref(false)
+const termsVersionRejected = ref(false)
 const submitting = ref(false)
 const success = ref(false)
 const errors = reactive({
@@ -179,6 +181,10 @@ const confirmation = useTemplateRef('confirmation')
 const termsActions = useTemplateRef('termsActions')
 const form = useTemplateRef('form')
 let returnToCheckbox = false
+
+onBeforeRouteUpdate((to, from) => {
+  if (submitting.value && to.query.role !== from.query.role) return false
+})
 
 watch(firstName, () => {
   errors.firstName = ''
@@ -233,13 +239,22 @@ function validateBirthDate() {
   ) {
     return 'Vérifiez votre date de naissance.'
   }
+  const today = new Date().toISOString().slice(0, 10)
+  const adultBirthDateLimit = String(Number(today.slice(0, 4)) - 18) + today.slice(4)
   if (value > today) return 'Choisissez une date qui n’est pas dans le futur.'
   if (value > adultBirthDateLimit) return 'Vous devez avoir au moins 18 ans.'
   return ''
 }
 
 async function submit() {
-  if (submitting.value || success.value || !role.value || !termsAvailable) return
+  if (
+    submitting.value ||
+    success.value ||
+    !role.value ||
+    !termsAvailable ||
+    termsVersionRejected.value
+  )
+    return
 
   errorMessage.value = ''
   errors.firstName = firstName.value.trim() ? '' : 'Indiquez votre prénom.'
@@ -288,8 +303,8 @@ async function submit() {
         break
       case 'TERMS_VERSION_INVALID':
         termsAccepted.value = false
-        errors.termsAccepted = 'Les conditions ont changé. Rechargez la page.'
-        invalidField = 'termsAccepted'
+        termsVersionRejected.value = true
+        errorMessage.value = 'Les conditions ont changé. Réessayez plus tard.'
         break
       case 'TERMS_ACCEPTANCE_REQUIRED':
         termsAccepted.value = false
