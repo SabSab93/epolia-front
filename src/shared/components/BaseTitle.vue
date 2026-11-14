@@ -1,3 +1,9 @@
+<template>
+  <component :is="level" class="base-title">
+    <slot />
+  </component>
+</template>
+
 <script setup lang="ts">
 withDefaults(
   defineProps<{
@@ -6,12 +12,6 @@ withDefaults(
   { level: 'h2' },
 )
 </script>
-
-<template>
-  <component :is="level" class="base-title">
-    <slot />
-  </component>
-</template>
 
 <style scoped>
 .base-title {

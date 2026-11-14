@@ -1,3 +1,11 @@
+<template>
+  <div class="base-card">
+    <div v-if="$slots.header" class="base-card-content"><slot name="header" /></div>
+    <div v-if="$slots.default" class="base-card-content"><slot /></div>
+    <div v-if="$slots.actions" class="base-card-actions"><slot name="actions" /></div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import type { VNodeChild } from 'vue'
 
@@ -7,14 +15,6 @@ defineSlots<{
   actions?(): VNodeChild
 }>()
 </script>
-
-<template>
-  <div class="base-card">
-    <div v-if="$slots.header" class="base-card-content"><slot name="header" /></div>
-    <div v-if="$slots.default" class="base-card-content"><slot /></div>
-    <div v-if="$slots.actions" class="base-card-actions"><slot name="actions" /></div>
-  </div>
-</template>
 
 <style scoped>
 @layer components {

@@ -1,3 +1,152 @@
+<template>
+  <div class="multi-field">
+    <label :id="`${inputId}-label`" :for="inputId" class="text-epolia-body font-semibold">
+      {{ label }}<span v-if="required" aria-hidden="true" class="ms-epolia-2xs">*</span>
+    </label>
+    <p :id="`${inputId}-hint`" class="text-epolia-body-small text-epolia-text-secondary">
+      Plusieurs choix possibles.<template v-if="required"> Au moins un choix est requis.</template>
+    </p>
+    <PopoverRoot v-model:open="open">
+      <div class="multi-control">
+        <PopoverTrigger ref="trigger" as-child>
+          <button
+            v-bind="attrs"
+            :id="inputId"
+            :disabled="disabled"
+            :aria-labelledby="`${inputId}-label ${inputId}-value`"
+            :aria-describedby="describedBy()"
+            :aria-invalid="
+              displayedError ? true : (attrs['aria-invalid'] as 'true' | 'false' | undefined)
+            "
+            class="multi-trigger"
+            :class="{ 'multi-invalid': displayedError, 'multi-has-clear': showClear }"
+          >
+            <span
+              :id="`${inputId}-value`"
+              class="multi-value"
+              :class="{ 'multi-placeholder': !values.length }"
+              >{{ summary }}</span
+            >
+            <span aria-hidden="true" class="multi-arrow" />
+          </button>
+        </PopoverTrigger>
+        <button
+          v-if="showClear"
+          type="button"
+          class="multi-clear"
+          :aria-label="`Effacer toutes les sélections de ${label}`"
+          @click="clear"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <PopoverPortal>
+        <PopoverContent
+          :side-offset="8"
+          :collision-padding="16"
+          prioritize-position
+          sticky="always"
+          as-child
+          @open-auto-focus="onOpenAutoFocus"
+          @close-auto-focus="onCloseAutoFocus"
+        >
+          <div
+            ref="panel"
+            class="epolia-multi-panel"
+            :aria-labelledby="`${inputId}-panel-title`"
+            @keydown.tab.capture="onPanelTab"
+          >
+            <p :id="`${inputId}-panel-title`" class="shrink-0 text-epolia-body font-semibold">
+              {{ label }}
+            </p>
+            <ListboxRoot
+              :model-value="values"
+              multiple
+              selection-behavior="toggle"
+              :disabled="disabled"
+              class="multi-options"
+              @update:model-value="updateSelection"
+            >
+              <ListboxContent :aria-label="label">
+                <ListboxItem
+                  v-for="option in options"
+                  :key="option.value"
+                  :value="option.value"
+                  :disabled="option.disabled"
+                  :aria-disabled="option.disabled || undefined"
+                  class="multi-option"
+                >
+                  <span>{{ option.label }}</span>
+                  <ListboxItemIndicator aria-hidden="true" class="multi-check"
+                    >✓</ListboxItemIndicator
+                  >
+                </ListboxItem>
+              </ListboxContent>
+            </ListboxRoot>
+            <p v-if="emptyMessage" class="text-epolia-body-small text-epolia-text-secondary">
+              {{ emptyMessage }}
+            </p>
+          </div>
+        </PopoverContent>
+      </PopoverPortal>
+    </PopoverRoot>
+    <select
+      ref="control"
+      v-model="nativeSelection"
+      multiple
+      :name="name"
+      :form="form"
+      :required="required"
+      :disabled="disabled"
+      tabindex="-1"
+      aria-hidden="true"
+      class="multi-native"
+      @invalid="onInvalid"
+    >
+      <option v-for="option in options" :key="option.value" :value="option.value">
+        {{ option.label }}
+      </option>
+    </select>
+    <ul
+      v-if="selectedOptions.length"
+      ref="tags"
+      :aria-label="`Sélections : ${label}`"
+      class="multi-tags"
+    >
+      <li v-for="option in selectedOptions" :key="option.value" class="min-w-0 max-w-full">
+        <BaseTag
+          :label="option.label"
+          clearable
+          :disabled="disabled"
+          @remove="remove(option.value)"
+        />
+      </li>
+    </ul>
+    <p
+      v-if="hasUnavailableSelection"
+      :id="`${inputId}-unavailable`"
+      class="text-epolia-body-small text-epolia-text-secondary"
+    >
+      Une sélection n’est plus disponible. Retirez les options indisponibles pour continuer.
+    </p>
+    <p
+      v-if="help"
+      :id="`${inputId}-help`"
+      class="text-epolia-body-small text-epolia-text-secondary"
+    >
+      {{ help }}
+    </p>
+    <p
+      v-if="displayedError"
+      :id="`${inputId}-error`"
+      class="text-epolia-body-small text-epolia-error"
+    >
+      Erreur : {{ displayedError }}
+    </p>
+    <p role="status" class="sr-only">{{ announcement }}</p>
+  </div>
+</template>
+
 <script setup lang="ts">
 import {
   computed,
@@ -252,155 +401,6 @@ watchPostEffect((onCleanup) => {
   onCleanup(() => element.ownerDocument.removeEventListener('reset', reset, true))
 })
 </script>
-
-<template>
-  <div class="multi-field">
-    <label :id="`${inputId}-label`" :for="inputId" class="text-epolia-body font-semibold">
-      {{ label }}<span v-if="required" aria-hidden="true" class="ms-epolia-2xs">*</span>
-    </label>
-    <p :id="`${inputId}-hint`" class="text-epolia-body-small text-epolia-text-secondary">
-      Plusieurs choix possibles.<template v-if="required"> Au moins un choix est requis.</template>
-    </p>
-    <PopoverRoot v-model:open="open">
-      <div class="multi-control">
-        <PopoverTrigger ref="trigger" as-child>
-          <button
-            v-bind="attrs"
-            :id="inputId"
-            :disabled="disabled"
-            :aria-labelledby="`${inputId}-label ${inputId}-value`"
-            :aria-describedby="describedBy()"
-            :aria-invalid="
-              displayedError ? true : (attrs['aria-invalid'] as 'true' | 'false' | undefined)
-            "
-            class="multi-trigger"
-            :class="{ 'multi-invalid': displayedError, 'multi-has-clear': showClear }"
-          >
-            <span
-              :id="`${inputId}-value`"
-              class="multi-value"
-              :class="{ 'multi-placeholder': !values.length }"
-              >{{ summary }}</span
-            >
-            <span aria-hidden="true" class="multi-arrow" />
-          </button>
-        </PopoverTrigger>
-        <button
-          v-if="showClear"
-          type="button"
-          class="multi-clear"
-          :aria-label="`Effacer toutes les sélections de ${label}`"
-          @click="clear"
-        >
-          <span aria-hidden="true">×</span>
-        </button>
-      </div>
-      <PopoverPortal>
-        <PopoverContent
-          :side-offset="8"
-          :collision-padding="16"
-          prioritize-position
-          sticky="always"
-          as-child
-          @open-auto-focus="onOpenAutoFocus"
-          @close-auto-focus="onCloseAutoFocus"
-        >
-          <div
-            ref="panel"
-            class="epolia-multi-panel"
-            :aria-labelledby="`${inputId}-panel-title`"
-            @keydown.tab.capture="onPanelTab"
-          >
-            <p :id="`${inputId}-panel-title`" class="shrink-0 text-epolia-body font-semibold">
-              {{ label }}
-            </p>
-            <ListboxRoot
-              :model-value="values"
-              multiple
-              selection-behavior="toggle"
-              :disabled="disabled"
-              class="multi-options"
-              @update:model-value="updateSelection"
-            >
-              <ListboxContent :aria-label="label">
-                <ListboxItem
-                  v-for="option in options"
-                  :key="option.value"
-                  :value="option.value"
-                  :disabled="option.disabled"
-                  :aria-disabled="option.disabled || undefined"
-                  class="multi-option"
-                >
-                  <span>{{ option.label }}</span>
-                  <ListboxItemIndicator aria-hidden="true" class="multi-check"
-                    >✓</ListboxItemIndicator
-                  >
-                </ListboxItem>
-              </ListboxContent>
-            </ListboxRoot>
-            <p v-if="emptyMessage" class="text-epolia-body-small text-epolia-text-secondary">
-              {{ emptyMessage }}
-            </p>
-          </div>
-        </PopoverContent>
-      </PopoverPortal>
-    </PopoverRoot>
-    <select
-      ref="control"
-      v-model="nativeSelection"
-      multiple
-      :name="name"
-      :form="form"
-      :required="required"
-      :disabled="disabled"
-      tabindex="-1"
-      aria-hidden="true"
-      class="multi-native"
-      @invalid="onInvalid"
-    >
-      <option v-for="option in options" :key="option.value" :value="option.value">
-        {{ option.label }}
-      </option>
-    </select>
-    <ul
-      v-if="selectedOptions.length"
-      ref="tags"
-      :aria-label="`Sélections : ${label}`"
-      class="multi-tags"
-    >
-      <li v-for="option in selectedOptions" :key="option.value" class="min-w-0 max-w-full">
-        <BaseTag
-          :label="option.label"
-          clearable
-          :disabled="disabled"
-          @remove="remove(option.value)"
-        />
-      </li>
-    </ul>
-    <p
-      v-if="hasUnavailableSelection"
-      :id="`${inputId}-unavailable`"
-      class="text-epolia-body-small text-epolia-text-secondary"
-    >
-      Une sélection n’est plus disponible. Retirez les options indisponibles pour continuer.
-    </p>
-    <p
-      v-if="help"
-      :id="`${inputId}-help`"
-      class="text-epolia-body-small text-epolia-text-secondary"
-    >
-      {{ help }}
-    </p>
-    <p
-      v-if="displayedError"
-      :id="`${inputId}-error`"
-      class="text-epolia-body-small text-epolia-error"
-    >
-      Erreur : {{ displayedError }}
-    </p>
-    <p role="status" class="sr-only">{{ announcement }}</p>
-  </div>
-</template>
 
 <style scoped>
 .multi-field {

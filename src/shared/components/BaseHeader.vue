@@ -1,3 +1,19 @@
+<template>
+  <header class="base-header">
+    <BaseButton
+      v-if="showBack"
+      :label="backLabel"
+      variant="tertiary"
+      class="base-header-back"
+      @click="emit('back')"
+    />
+    <div class="base-header-content">
+      <BaseTitle :level="level" class="base-header-title">{{ title }}</BaseTitle>
+      <div v-if="$slots.actions" class="base-header-actions"><slot name="actions" /></div>
+    </div>
+  </header>
+</template>
+
 <script setup lang="ts">
 import type { VNodeChild } from 'vue'
 import BaseTitle from '@/shared/components/BaseTitle.vue'
@@ -16,22 +32,6 @@ withDefaults(
 const emit = defineEmits<{ back: [] }>()
 defineSlots<{ actions?(): VNodeChild }>()
 </script>
-
-<template>
-  <header class="base-header">
-    <BaseButton
-      v-if="showBack"
-      :label="backLabel"
-      variant="tertiary"
-      class="base-header-back"
-      @click="emit('back')"
-    />
-    <div class="base-header-content">
-      <BaseTitle :level="level" class="base-header-title">{{ title }}</BaseTitle>
-      <div v-if="$slots.actions" class="base-header-actions"><slot name="actions" /></div>
-    </div>
-  </header>
-</template>
 
 <style scoped>
 @layer components {

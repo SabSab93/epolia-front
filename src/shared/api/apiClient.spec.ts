@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { apiBaseUrl, apiFetch } from '@/shared/api/apiClient'
+import { ApiError, apiBaseUrl, apiFetch } from '@/shared/api/apiClient'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -47,6 +47,21 @@ describe('apiFetch', () => {
     )
 
     await expect(apiFetch('/example')).rejects.toThrow('HTTP 403: Forbidden')
+  })
+
+  it('preserves the API status and error code for form and session handling', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({ code: 'TERMS_VERSION_INVALID', message: 'Test' }, { status: 400 }),
+        ),
+    )
+
+    const result = apiFetch('/api/auth/register')
+    await expect(result).rejects.toBeInstanceOf(ApiError)
+    await expect(result).rejects.toMatchObject({ status: 400, code: 'TERMS_VERSION_INVALID' })
   })
 
   it('propagates network failures', async () => {

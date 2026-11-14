@@ -6,6 +6,17 @@ export function createApiUrl(path: string): URL {
   return new URL(path, apiBaseUrl)
 }
 
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    statusText: string,
+    readonly code?: string,
+  ) {
+    super(`HTTP ${status}: ${statusText}`)
+    this.name = 'ApiError'
+  }
+}
+
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers)
   if (!headers.has('Accept')) {
@@ -15,7 +26,12 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   const response = await fetch(createApiUrl(path), { ...options, headers })
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    const body: unknown = await response.json().catch(() => null)
+    const code =
+      body && typeof body === 'object' && 'code' in body && typeof body.code === 'string'
+        ? body.code
+        : undefined
+    throw new ApiError(response.status, response.statusText, code)
   }
 
   return response

@@ -1,46 +1,3 @@
-<script setup lang="ts">
-import { computed, useAttrs, useId, type InputHTMLAttributes } from 'vue'
-
-defineOptions({ inheritAttrs: false })
-
-const props = withDefaults(
-  defineProps<{
-    label: string
-    id?: string
-    name?: string
-    help?: string
-    error?: string
-    required?: boolean
-    disabled?: boolean
-  }>(),
-  {
-    id: undefined,
-    name: undefined,
-    help: undefined,
-    error: undefined,
-    required: false,
-    disabled: false,
-  },
-)
-
-const model = defineModel<boolean>({ required: true })
-const generatedId = useId()
-const inputId = computed(() => props.id ?? generatedId)
-const attrs = useAttrs()
-
-function describedBy() {
-  return (
-    [
-      attrs['aria-describedby'],
-      props.help ? `${inputId.value}-help` : undefined,
-      props.error ? `${inputId.value}-error` : undefined,
-    ]
-      .filter(Boolean)
-      .join(' ') || undefined
-  )
-}
-</script>
-
 <template>
   <div class="checkbox-layout grid min-w-0 gap-x-epolia-xs">
     <label
@@ -87,6 +44,49 @@ function describedBy() {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { computed, useAttrs, useId, type InputHTMLAttributes } from 'vue'
+
+defineOptions({ inheritAttrs: false })
+
+const props = withDefaults(
+  defineProps<{
+    label: string
+    id?: string
+    name?: string
+    help?: string
+    error?: string
+    required?: boolean
+    disabled?: boolean
+  }>(),
+  {
+    id: undefined,
+    name: undefined,
+    help: undefined,
+    error: undefined,
+    required: false,
+    disabled: false,
+  },
+)
+
+const model = defineModel<boolean>({ required: true })
+const generatedId = useId()
+const inputId = computed(() => props.id ?? generatedId)
+const attrs = useAttrs()
+
+function describedBy() {
+  return (
+    [
+      attrs['aria-describedby'],
+      props.help ? `${inputId.value}-help` : undefined,
+      props.error ? `${inputId.value}-error` : undefined,
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined
+  )
+}
+</script>
 
 <style scoped>
 .checkbox-layout {

@@ -1,51 +1,3 @@
-<script setup lang="ts">
-import { computed, useAttrs, useId } from 'vue'
-
-defineOptions({ inheritAttrs: false })
-
-export interface RadioOption {
-  value: string
-  label: string
-  description?: string
-  disabled?: boolean
-}
-
-const props = defineProps<{
-  legend: string
-  options: readonly RadioOption[]
-  id?: string
-  name?: string
-  help?: string
-  error?: string
-  required?: boolean
-  disabled?: boolean
-  optionClass?: string
-}>()
-
-const model = defineModel<string | undefined>({ required: true })
-const generatedId = useId()
-const groupId = computed(() => props.id ?? generatedId)
-const groupName = computed(() => props.name ?? groupId.value)
-const attrs = useAttrs()
-function descriptions() {
-  return (
-    [
-      attrs['aria-describedby'],
-      props.help && `${groupId.value}-help`,
-      props.error && `${groupId.value}-error`,
-    ]
-      .filter(Boolean)
-      .join(' ') || undefined
-  )
-}
-
-function select(option: RadioOption) {
-  if (!props.disabled && !option.disabled && model.value !== option.value) {
-    model.value = option.value
-  }
-}
-</script>
-
 <template>
   <fieldset
     v-bind="attrs"
@@ -121,6 +73,54 @@ function select(option: RadioOption) {
     </p>
   </fieldset>
 </template>
+
+<script setup lang="ts">
+import { computed, useAttrs, useId } from 'vue'
+
+defineOptions({ inheritAttrs: false })
+
+export interface RadioOption {
+  value: string
+  label: string
+  description?: string
+  disabled?: boolean
+}
+
+const props = defineProps<{
+  legend: string
+  options: readonly RadioOption[]
+  id?: string
+  name?: string
+  help?: string
+  error?: string
+  required?: boolean
+  disabled?: boolean
+  optionClass?: string
+}>()
+
+const model = defineModel<string | undefined>({ required: true })
+const generatedId = useId()
+const groupId = computed(() => props.id ?? generatedId)
+const groupName = computed(() => props.name ?? groupId.value)
+const attrs = useAttrs()
+function descriptions() {
+  return (
+    [
+      attrs['aria-describedby'],
+      props.help && `${groupId.value}-help`,
+      props.error && `${groupId.value}-error`,
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined
+  )
+}
+
+function select(option: RadioOption) {
+  if (!props.disabled && !option.disabled && model.value !== option.value) {
+    model.value = option.value
+  }
+}
+</script>
 
 <style scoped>
 .radio-group {
