@@ -2,9 +2,10 @@
   <main
     ref="content"
     tabindex="-1"
-    class="epolia-screen-padding grid min-h-dvh place-items-center bg-epolia-secondary-hover text-epolia-text outline-none [--epolia-screen-block:var(--spacing-epolia-xl)]"
+    class="epolia-screen-padding flex min-h-dvh flex-col items-center gap-epolia-lg bg-epolia-secondary-hover text-epolia-text outline-none [--epolia-screen-block:var(--spacing-epolia-xl)]"
   >
-    <section class="w-full max-w-sm space-y-epolia-xl">
+    <AppHeader />
+    <section class="my-auto w-full max-w-sm space-y-epolia-xl">
       <div class="space-y-epolia-xs text-center">
         <BaseTitle level="h1" class="text-epolia-primary">Epolia</BaseTitle>
         <p class="text-epolia-body text-epolia-text-secondary">
@@ -84,6 +85,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
+import AppHeader from '@/AppHeader.vue'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'

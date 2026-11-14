@@ -11,7 +11,11 @@
   >
     <component
       :is="Component"
-      :key="currentRoute.name === 'register' ? String(currentRoute.query.role) : undefined"
+      :key="
+        currentRoute.name === 'register' || currentRoute.name === 'additional-role'
+          ? currentRoute.path + String(currentRoute.query.role ?? '')
+          : undefined
+      "
     />
   </RouterView>
 </template>
