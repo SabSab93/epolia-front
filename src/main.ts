@@ -1,7 +1,8 @@
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import App from '@/App.vue'
-import router from '@/router'
+import { createWebHistory } from 'vue-router'
+import { createAppRouter } from '@/router'
 import '@/assets/main.css'
 
 const themeColor = getComputedStyle(document.documentElement)
@@ -15,4 +16,7 @@ if (themeColor) {
   document.head.append(themeMeta)
 }
 
-createApp(App).use(createPinia()).use(router).mount('#app')
+const pinia = createPinia()
+const router = createAppRouter(createWebHistory(import.meta.env.BASE_URL), pinia)
+
+createApp(App).use(pinia).use(router).mount('#app')

@@ -1,8 +1,16 @@
-import { createRouter, createWebHistory, type RouterHistory } from 'vue-router'
+import type { Pinia } from 'pinia'
+import { createRouter, type RouterHistory } from 'vue-router'
 import HomeView from '@/HomeView.vue'
 import { parseAccountRole } from '@/domains/auth/accountRole'
+import { useAuthStore } from '@/domains/auth/stores/authStore'
 
-export function createAppRouter(history: RouterHistory) {
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean
+  }
+}
+
+export function createAppRouter(history: RouterHistory, pinia?: Pinia) {
   const router = createRouter({
     history,
     routes: [
@@ -32,9 +40,14 @@ export function createAppRouter(history: RouterHistory) {
     ],
   })
 
-  router.beforeEach((to) => {
+  router.beforeEach(async (to) => {
     if (to.name === 'register' && !parseAccountRole(to.query.role)) {
       return { name: 'choose-role' }
+    }
+    if (to.matched.some(({ meta }) => meta.requiresAuth)) {
+      const auth = useAuthStore(pinia)
+      await auth.restore()
+      if (!auth.isAuthenticated) return { name: 'login', replace: true }
     }
   })
 
@@ -46,5 +59,3 @@ export function createAppRouter(history: RouterHistory) {
 
   return router
 }
-
-export default createAppRouter(createWebHistory(import.meta.env.BASE_URL))

@@ -5,7 +5,7 @@
     back-label="Retour au choix du compte"
   >
     <p class="font-semibold">
-      {{ role === AccountRole.Customer ? 'Compte particulier' : 'Compte étudiant' }}
+      {{ role === AccountRoleEnum.Customer ? 'Compte particulier' : 'Compte étudiant' }}
     </p>
     <p class="mt-epolia-xs">Le formulaire d’inscription est en cours de développement.</p>
 
@@ -19,7 +19,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { parseAccountRole } from '@/domains/auth/accountRole'
-import { AccountRole } from '@/domains/auth/models/enums/AccountRole'
+import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import AuthLink from '@/domains/auth/components/AuthLink.vue'
 import AuthLayout from '@/domains/auth/components/AuthLayout.vue'
 

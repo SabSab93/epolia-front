@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import App from '@/App.vue'
-import { AccountRole } from '@/domains/auth/models/enums/AccountRole'
+import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { createAppRouter } from '@/router'
 import HomeView from '@/HomeView.vue'
 
@@ -37,6 +37,7 @@ it('navigates through the public auth screens and restores focus on return to th
     global: { plugins: [createPinia(), testRouter] },
   })
 
+  await vi.waitFor(() => expect(wrapper.get('button').text()).toBe('S’inscrire'))
   await wrapper.get('button').trigger('click')
   await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe('Qui êtes-vous ?'))
   expect(document.activeElement).toBe(wrapper.get('main').element)
@@ -81,7 +82,7 @@ it('navigates through the public auth screens and restores focus on return to th
   expect(continueButton.attributes('disabled')).toBeUndefined()
   await continueButton.trigger('click')
   await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe('Créer un compte'))
-  expect(testRouter.currentRoute.value.query.role).toBe(AccountRole.Student)
+  expect(testRouter.currentRoute.value.query.role).toBe(AccountRoleEnum.Student)
   expect(wrapper.text()).toContain('Compte étudiant')
 
   await wrapper.get('button').trigger('click')
@@ -116,7 +117,7 @@ it('leaves an auth screen out of the back history when returning to a different 
 
 it('keeps the return destination inside the app when registration is opened directly', async () => {
   const testRouter = createTestRouter()
-  await testRouter.push({ name: 'register', query: { role: AccountRole.Customer } })
+  await testRouter.push({ name: 'register', query: { role: AccountRoleEnum.Customer } })
   const wrapper = mount(App, { global: { plugins: [createPinia(), testRouter] } })
 
   await wrapper.get('button').trigger('click')
@@ -126,7 +127,7 @@ it('keeps the return destination inside the app when registration is opened dire
 it.each([
   '/inscription',
   '/inscription?role=ADMIN',
-  `/inscription?role=${AccountRole.Student}&role=${AccountRole.Customer}`,
+  `/inscription?role=${AccountRoleEnum.Student}&role=${AccountRoleEnum.Customer}`,
 ])(
   'redirects an incomplete or invalid registration link (%s) to the account choice',
   async (address) => {
@@ -138,7 +139,7 @@ it.each([
 
 it('validates a changed role while registration is already open', async () => {
   const testRouter = createTestRouter()
-  await testRouter.push({ name: 'register', query: { role: AccountRole.Customer } })
+  await testRouter.push({ name: 'register', query: { role: AccountRoleEnum.Customer } })
   expect(testRouter.currentRoute.value.name).toBe('register')
 
   await testRouter.push({ name: 'register', query: { role: 'ADMIN' } })
@@ -148,19 +149,19 @@ it('validates a changed role while registration is already open', async () => {
 it('restores the last account choice after returning from login', async () => {
   const testRouter = createTestRouter()
   await testRouter.push('/')
-  await testRouter.push({ name: 'choose-role', query: { role: AccountRole.Student } })
+  await testRouter.push({ name: 'choose-role', query: { role: AccountRoleEnum.Student } })
   const wrapper = mount(App, { global: { plugins: [createPinia(), testRouter] } })
 
   await wrapper.get('[role="group"] button[aria-pressed="false"]').trigger('click')
   await vi.waitFor(() =>
-    expect(testRouter.currentRoute.value.query.role).toBe(AccountRole.Customer),
+    expect(testRouter.currentRoute.value.query.role).toBe(AccountRoleEnum.Customer),
   )
   await wrapper.get('a[href="/connexion"]').trigger('click')
   await vi.waitFor(() => expect(testRouter.currentRoute.value.name).toBe('login'))
 
   testRouter.back()
   await vi.waitFor(() => expect(testRouter.currentRoute.value.name).toBe('choose-role'))
-  expect(testRouter.currentRoute.value.query.role).toBe(AccountRole.Customer)
+  expect(testRouter.currentRoute.value.query.role).toBe(AccountRoleEnum.Customer)
   expect(
     wrapper.findAll('[role="group"] button').map((button) => button.attributes('aria-pressed')),
   ).toEqual(['true', 'false'])

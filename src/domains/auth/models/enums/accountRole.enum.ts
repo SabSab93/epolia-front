@@ -1,4 +1,4 @@
-export enum AccountRole {
+export enum AccountRoleEnum {
   Customer = 'CUSTOMER',
   Student = 'STUDENT',
 }
