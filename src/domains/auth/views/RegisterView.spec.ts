@@ -290,8 +290,8 @@ it.each([
         'Erreur : Vous devez avoir au moins 18 ans.',
       )
     }
-    if (canSubmit) expect(wrapper.text()).not.toContain('au moins 18 ans')
     if (canSubmit) {
+      expect(wrapper.text()).not.toContain('Erreur : Vous devez avoir au moins 18 ans.')
       reply.resolve(Response.json({}, { status: 503 }))
       await flushPromises()
     }
@@ -305,6 +305,10 @@ it('shows all required-field errors in one submission and focuses the first inpu
   vi.stubGlobal('fetch', fetchMock)
   const { wrapper, button, input, submit } = await openRegistration()
   expect(wrapper.get('form').attributes('novalidate')).toBeDefined()
+  const birthDateHelpId = input('birthDate').attributes('aria-describedby')
+  expect(wrapper.get(`[id="${birthDateHelpId}"]`).text()).toBe(
+    'Vous devez avoir au moins 18 ans pour vous inscrire.',
+  )
   expect(button('Créer mon compte').element.disabled).toBe(false)
   await submit()
 

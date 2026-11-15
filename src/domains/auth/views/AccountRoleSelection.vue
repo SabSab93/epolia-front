@@ -54,13 +54,13 @@ const roleOptions = [
     value: AccountRoleEnum.Customer,
     label: 'Je suis particulier',
     description:
-      'Décrivez votre besoin et trouvez un étudiant pour vous aider, par exemple pour des cours, un dépannage informatique ou un projet créatif.',
+      'Créez un compte pour trouver de l’aide pour une mission, par exemple des cours, un dépannage informatique ou un projet créatif.',
   },
   {
     value: AccountRoleEnum.Student,
     label: 'Je suis étudiant',
     description:
-      'Présentez vos compétences, proposez vos services et choisissez des missions qui s’accordent avec votre emploi du temps.',
+      'Créez un compte pour présenter votre profil et proposer des services liés à vos études.',
   },
 ] as const
 </script>

@@ -1,10 +1,13 @@
 # Epolia Front
 
-Application mobile frontend d'Epolia, marketplace mettant en relation des particuliers
-avec des etudiantes, etudiants, apprenties et apprentis proposant des services.
+Application mobile d’Epolia. Elle met en relation des particuliers et des
+étudiants qui proposent des services liés à leurs études. L’inscription comme
+particulier ou étudiant est réservée aux personnes de **18 ans et plus**.
+Les étudiants majeurs en alternance ou en apprentissage sont inclus si leur
+formation est éligible.
 
-Ce repository contient uniquement le socle frontend mobile. Le backend et la
-documentation vivent dans des repositories separes.
+Ce dépôt contient l’application mobile. Le backend et la documentation sont
+maintenus dans des dépôts séparés.
 
 ## Stack
 

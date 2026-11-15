@@ -13,7 +13,6 @@
   >
     <section v-if="success" ref="confirmation" tabindex="-1" class="flex flex-col gap-epolia-md">
       <BaseTitle>Votre compte est créé</BaseTitle>
-      <p>La prochaine étape sera de confirmer votre adresse e-mail.</p>
       <BaseAlert
         v-if="auth.persistenceFailed"
         message="Votre session est active pour cette utilisation. Elle n’a pas pu être enregistrée sur cet appareil."
@@ -69,6 +68,9 @@
         label="Date de naissance"
         type="date"
         autocomplete="bday"
+        :help="
+          errors.birthDate ? undefined : 'Vous devez avoir au moins 18 ans pour vous inscrire.'
+        "
         :clearable="false"
         required
         :disabled="submitting"
