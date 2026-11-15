@@ -95,6 +95,27 @@ Pour reproduire : créer une app Vite + Vue vide, ajouter les six icônes avec
 chaque solution, lancer `vite build` et comparer la taille gzip de
 `dist/assets/*.js` à celle de l'app sans icône.
 
+## Chargement de contenu
+
+Utiliser `BaseLineLoader` pour représenter une ligne de texte pendant le
+chargement d’une carte ou d’une liste.
+
+| Hauteur               | Taille actuelle | Usage                                                |
+| --------------------- | --------------- | ---------------------------------------------------- |
+| `thin`                | 8 px            | Information secondaire, par exemple une localisation |
+| `normal` (par défaut) | 12 px           | Texte courant, par exemple une description           |
+| `thick`               | 16 px           | Titre de carte                                       |
+
+Sur téléphone et tablette, garder les mêmes hauteurs si la typographie de la
+carte reste identique. Adapter la longueur des lignes à la largeur disponible
+avec `width` (25 %, 50 %, 75 % ou 100 %). Reprendre les espacements de la carte
+finale et réserver la place de ses lignes de texte pour éviter un décalage quand
+le contenu apparaît.
+
+Pour évaluer une hauteur de titre de 20 px, comparer d’abord les barres à largeur
+égale dans Storybook, puis comparer la carte en chargement à la carte finale sur
+téléphone et tablette.
+
 ## Ajouter un composant
 
 Installer avec `npm ci`, puis ajouter uniquement le composant nécessaire :
