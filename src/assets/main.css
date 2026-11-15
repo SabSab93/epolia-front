@@ -76,6 +76,32 @@
   --color-epolia-input-readonly: var(--color-epolia-secondary-hover);
   --color-epolia-border: #cbd5e1;
   --color-epolia-focus: var(--color-epolia-text);
+  --color-epolia-skeleton: color-mix(
+    in srgb,
+    var(--color-epolia-text) 13%,
+    var(--color-epolia-surface)
+  );
+  --color-epolia-skeleton-highlight: color-mix(
+    in srgb,
+    var(--color-epolia-text) 5%,
+    var(--color-epolia-surface)
+  );
+}
+
+@theme {
+  --spacing-epolia-skeleton-thin: 0.5rem;
+  --spacing-epolia-skeleton-normal: 0.75rem;
+  --spacing-epolia-skeleton-thick: 1rem;
+  --animate-epolia-skeleton: epolia-skeleton-shimmer 2s ease-in-out 2;
+
+  @keyframes epolia-skeleton-shimmer {
+    from {
+      translate: -100% 0;
+    }
+    to {
+      translate: 100% 0;
+    }
+  }
 }
 
 :root {

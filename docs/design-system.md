@@ -95,6 +95,31 @@ Pour reproduire : créer une app Vite + Vue vide, ajouter les six icônes avec
 chaque solution, lancer `vite build` et comparer la taille gzip de
 `dist/assets/*.js` à celle de l'app sans icône.
 
+## Chargement de contenu
+
+Utiliser `BaseLineLoader` pour représenter une ligne de texte pendant le
+chargement d’une carte ou d’une liste.
+
+| Hauteur               | Taille actuelle | Usage                                                |
+| --------------------- | --------------- | ---------------------------------------------------- |
+| `thin`                | 8 px            | Information secondaire, par exemple une localisation |
+| `normal` (par défaut) | 12 px           | Texte courant, par exemple une description           |
+| `thick`               | 16 px           | Titre de carte                                       |
+
+Sur téléphone et tablette, garder les mêmes hauteurs si la typographie de la
+carte reste identique. Adapter la longueur des lignes avec `width`
+(`xs` = 25 %, `sm` = 50 %, `md` = 75 % par défaut, `lg` = 100 %).
+Le conteneur parent gère l’alignement, les espacements et la hauteur réservée
+au texte final, pour éviter que la carte se décale quand le contenu apparaît.
+
+Chaque ligne est décorative. Le parent indique que la zone de contenu est
+occupée avec `aria-busy` et porte une seule annonce de chargement pour le
+groupe, hors de la zone occupée.
+
+Dans Storybook, la story « Comparaison des hauteurs » affiche les trois lignes
+à largeur égale. Tester une hauteur de 20 px dans une carte réelle si le
+titre mérite un relief plus marqué.
+
 ## Ajouter un composant
 
 Installer avec `npm ci`, puis ajouter uniquement le composant nécessaire :
