@@ -6,7 +6,9 @@ enableAutoUnmount(afterEach)
 
 describe('BaseLineLoader', () => {
   it('renders one decorative line without text, a live region or a focus target', () => {
-    const { element } = mount(BaseLineLoader)
+    const { element } = mount(BaseLineLoader, {
+      attrs: { 'aria-hidden': 'false', 'aria-live': 'polite', role: 'progressbar', tabindex: '0' },
+    })
 
     expect(element).toHaveAttribute('aria-hidden', 'true')
     expect(element).not.toHaveAttribute('role')
