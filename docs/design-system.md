@@ -39,6 +39,13 @@ Toutes les couleurs sont définies une seule fois dans `main.css`, sous
 bordures et `ring-epolia-focus` pour le focus. Les états utilisent les suffixes
 `-hover` et `-active`. Aucun alias de couleur générique (`bg-primary`, etc.).
 
+Couleurs d’état des boutons, dans un bloc à part de `main.css` :
+`--color-epolia-danger` (rouge), `--color-epolia-info` (gris foncé) et
+`--color-epolia-warning` (orange), avec leurs `-hover` et `-active`. Ce sont
+les couleurs de `BaseAlert`, pour qu’un état ait une seule couleur dans l’app.
+Libellé en `text-epolia-primary-text` ; contraste ≥ 4,5:1 dans tous les états.
+Les classes sont dans le `cva` de `BaseButton.vue`.
+
 ## Icônes
 
 Les icônes sont celles du Figma : **Google Material Symbols** (style Outlined,
