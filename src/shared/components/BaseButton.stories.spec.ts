@@ -1,7 +1,11 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { reactive } from 'vue'
-import meta, { IconLoading, IconLongLabel } from '@/shared/components/BaseButton.stories'
+import meta, {
+  DangerLongLabel,
+  IconLoading,
+  IconLongLabel,
+} from '@/shared/components/BaseButton.stories'
 import BaseIcon from '@/shared/components/BaseIcon.vue'
 import BaseLoader from '@/shared/components/BaseLoader.vue'
 
@@ -25,6 +29,12 @@ describe('BaseButton stories', () => {
     const wrapper = mount(meta.render({ ...meta.args, ...IconLongLabel.args }))
     expect(wrapper.text()).toBe('Continuer vers la vérification de mon profil étudiant')
     expect(wrapper.findComponent(BaseIcon).props('size')).toBe(20)
+  })
+
+  it('keeps the long danger label complete', () => {
+    const wrapper = mount(meta.render({ ...meta.args, ...DangerLongLabel.args }))
+    expect(wrapper.text()).toBe('Supprimer définitivement mon compte et toutes mes données')
+    expect(wrapper.classes()).toContain('bg-epolia-danger')
   })
 
   it('shows only the spinner in the loading story', () => {
