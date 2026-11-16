@@ -47,6 +47,11 @@ cp .env.example .env
 npm run dev
 ```
 
+Le serveur n'est accessible que depuis ton ordinateur. Pour tester sur un
+téléphone branché au même Wi-Fi, lancer `npm run dev:lan` : le serveur devient
+alors visible par tout le réseau local. À éviter sur un réseau public (école,
+café), et à arrêter une fois l'essai fini.
+
 ## Qualite
 
 Les imports internes utilisent exclusivement `@/`, qui correspond a la racine
@@ -101,6 +106,10 @@ besoin.
 | Variable       | Description                 | Exemple                 |
 | -------------- | --------------------------- | ----------------------- |
 | `VITE_API_URL` | URL de base de l'API Epolia | `http://localhost:3000` |
+
+Tout build (`npm run build`, quel que soit le mode) refuse de compiler si
+`VITE_API_URL` manque ou n'est pas en `https`. Seuls `http://localhost` et
+`http://127.0.0.1` sont acceptés, pour tester avec l'API locale.
 
 Le texte des [CGU de démonstration](src/domains/auth/content/cgu-test-v1.json)
 est séparé du formulaire et porte la version `cgu-test-v1`. Configurer la même valeur dans `REGISTRATION_TERMS_VERSION` sur
