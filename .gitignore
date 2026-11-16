@@ -10,3 +10,7 @@ coverage/
 *.local
 android/app/build/
 ios/App/build/
+
+# Android signing keys
+*.jks
+*.keystore
