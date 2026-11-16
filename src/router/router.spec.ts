@@ -56,7 +56,12 @@ describe('private routes', () => {
     expect(wrapper.text()).not.toContain('Données privées')
     expect(wrapper.get('[role="status"]').text()).toContain('Vérification de la session')
     fetchReply.resolve(
-      Response.json({ id: 'user-id', email: null, roles: [AccountRoleEnum.Customer] }),
+      Response.json({
+        id: 'user-id',
+        email: null,
+        emailVerified: true,
+        roles: [AccountRoleEnum.Customer],
+      }),
     )
     await navigation
     expect(wrapper.text()).not.toContain('Vérification de la session')
@@ -99,7 +104,14 @@ describe('private routes', () => {
 
     await wrapper.get('button').trigger('click')
     expect(wrapper.get('button').attributes('aria-busy')).toBe('true')
-    retry.resolve(Response.json({ id: 'user-id', email: null, roles: [AccountRoleEnum.Customer] }))
+    retry.resolve(
+      Response.json({
+        id: 'user-id',
+        email: null,
+        emailVerified: true,
+        roles: [AccountRoleEnum.Customer],
+      }),
+    )
     await vi.waitFor(() => expect(wrapper.text()).toContain('Se déconnecter'))
     expect(router.currentRoute.value.name).toBe('home')
     await vi.waitFor(() => expect(document.activeElement).toBe(wrapper.get('main').element))
@@ -110,7 +122,12 @@ describe('private routes', () => {
     async (leftLogin) => {
       vi.mocked(readAccessToken).mockResolvedValue('stored-token')
       const retry = deferred<Response>()
-      const serverUser = { id: 'user-id', email: null, roles: [AccountRoleEnum.Customer] }
+      const serverUser = {
+        id: 'user-id',
+        email: null,
+        emailVerified: true,
+        roles: [AccountRoleEnum.Customer],
+      }
       const fetchMock = vi
         .fn<typeof fetch>()
         .mockRejectedValueOnce(new TypeError('Network offline'))
@@ -145,11 +162,14 @@ describe('private routes', () => {
     vi.mocked(writeAccessToken).mockRejectedValueOnce(new Error('Storage unavailable'))
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn<typeof fetch>()
-        .mockResolvedValue(
-          Response.json({ id: 'user-id', email: null, roles: [AccountRoleEnum.Customer] }),
-        ),
+      vi.fn<typeof fetch>().mockResolvedValue(
+        Response.json({
+          id: 'user-id',
+          email: null,
+          emailVerified: true,
+          roles: [AccountRoleEnum.Customer],
+        }),
+      ),
     )
     const { pinia, router } = setup()
     await router.push('/')
@@ -168,11 +188,14 @@ describe('private routes', () => {
     vi.mocked(readAccessToken).mockResolvedValue('stored-token')
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn<typeof fetch>()
-        .mockResolvedValue(
-          Response.json({ id: 'user-id', email: null, roles: [AccountRoleEnum.Customer] }),
-        ),
+      vi.fn<typeof fetch>().mockResolvedValue(
+        Response.json({
+          id: 'user-id',
+          email: null,
+          emailVerified: true,
+          roles: [AccountRoleEnum.Customer],
+        }),
+      ),
     )
     const { pinia, router, auth } = setup()
     await router.push('/prive')
@@ -191,7 +214,7 @@ describe('adding a role to the current account', () => {
     [AccountRoleEnum.Student, AccountRoleEnum.Customer, 'particulier'],
   ])('opens the role-specific registration for %s', async (currentRole, newRole, label) => {
     vi.mocked(readAccessToken).mockResolvedValue('stored-token')
-    const user = { id: 'user-id', email: null, roles: [currentRole] }
+    const user = { id: 'user-id', email: null, emailVerified: true, roles: [currentRole] }
     const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (url) => {
       if (new URL(String(url)).pathname === '/api/auth/roles') {
         return Response.json({

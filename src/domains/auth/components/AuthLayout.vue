@@ -15,7 +15,11 @@
       <div class="min-w-0 break-words text-epolia-body">
         <slot />
       </div>
-      <nav aria-label="Authentification" class="flex flex-col items-center gap-epolia-xs">
+      <nav
+        v-if="$slots.links"
+        aria-label="Authentification"
+        class="flex flex-col items-center gap-epolia-xs"
+      >
         <slot name="links" />
       </nav>
     </div>

@@ -10,7 +10,12 @@ vi.mock('@/domains/auth/stores/sessionStorage', () => ({
   writeAccessToken: vi.fn(),
 }))
 
-const user = { id: 'user-id', email: 'test@example.com', roles: [AccountRoleEnum.Student] }
+const user = {
+  id: 'user-id',
+  email: 'test@example.com',
+  emailVerified: false,
+  roles: [AccountRoleEnum.Student],
+}
 const loginInput = { email: user.email, password: 'test-password' }
 const registerInput = {
   ...loginInput,

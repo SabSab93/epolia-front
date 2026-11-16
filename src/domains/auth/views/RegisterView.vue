@@ -1,28 +1,11 @@
 <template>
   <AuthLayout
     :title="showTerms ? 'Conditions d’utilisation' : 'Créer un compte'"
-    :back-to="success ? { name: 'home' } : { name: 'choose-role', query: { role } }"
-    :back-label="
-      showTerms
-        ? 'Revenir au formulaire'
-        : success
-          ? 'Retour à l’accueil'
-          : 'Retour au choix du compte'
-    "
+    :back-to="{ name: 'choose-role', query: { role } }"
+    :back-label="showTerms ? 'Revenir au formulaire' : 'Retour au choix du compte'"
     :back-action="showTerms ? closeTerms : undefined"
   >
-    <section v-if="success" ref="confirmation" tabindex="-1" class="flex flex-col gap-epolia-md">
-      <BaseTitle>Votre compte est créé</BaseTitle>
-      <p>La prochaine étape sera de confirmer votre adresse e-mail.</p>
-      <BaseAlert
-        v-if="auth.persistenceFailed"
-        message="Votre session est active pour cette utilisation. Elle n’a pas pu être enregistrée sur cet appareil."
-        variant="warning"
-      />
-      <BaseButton label="Retour à l’accueil" @click="router.replace({ name: 'home' })" />
-    </section>
-
-    <RegistrationTerms v-else-if="showTerms" @accept="closeTerms(true)" @decline="declineTerms" />
+    <RegistrationTerms v-if="showTerms" @accept="closeTerms(true)" @decline="declineTerms" />
 
     <form
       v-else
@@ -32,31 +15,43 @@
       :aria-busy="submitting"
       @submit.prevent="submit"
     >
-      <p class="font-semibold">
-        {{ role === AccountRoleEnum.Customer ? 'Compte particulier' : 'Compte étudiant' }}
-      </p>
-      <BaseInput
-        v-model="firstName"
-        name="firstName"
-        label="Prénom"
-        autocomplete="given-name"
-        :error="errors.firstName"
-        required
-        :disabled="submitting"
-      />
-      <BaseInput
-        v-model="lastName"
-        name="lastName"
-        label="Nom"
-        autocomplete="family-name"
-        :error="errors.lastName"
-        required
-        :disabled="submitting"
-      />
+      <div class="flex flex-col gap-epolia-xs">
+        <BaseTitle>Créez votre compte</BaseTitle>
+        <p class="text-epolia-text-secondary">
+          {{
+            role === AccountRoleEnum.Student
+              ? 'Compte étudiant, gratuit et sans engagement.'
+              : 'Gratuit et sans engagement.'
+          }}
+        </p>
+      </div>
+      <div class="register-names">
+        <BaseInput
+          v-model="firstName"
+          name="firstName"
+          label="Prénom"
+          placeholder="Marie"
+          autocomplete="given-name"
+          :error="errors.firstName"
+          required
+          :disabled="submitting"
+        />
+        <BaseInput
+          v-model="lastName"
+          name="lastName"
+          label="Nom"
+          placeholder="Dupont"
+          autocomplete="family-name"
+          :error="errors.lastName"
+          required
+          :disabled="submitting"
+        />
+      </div>
       <BaseInput
         v-model="email"
         name="email"
         label="Adresse e-mail"
+        placeholder="marie.dupont@email.fr"
         type="email"
         autocomplete="email"
         required
@@ -94,14 +89,14 @@
         <BaseCheckbox
           :model-value="termsAccepted"
           name="termsAccepted"
-          label="J’accepte les conditions d’utilisation"
+          label="J’accepte les conditions générales d’utilisation"
           :error="errors.termsAccepted"
           :disabled="submitting"
           required
           @update:model-value="changeTermsAcceptance"
         />
         <BaseButton
-          label="Lire les conditions d’utilisation"
+          label="Lire les conditions générales d’utilisation"
           variant="tertiary"
           class="border-0 px-0 text-start text-epolia-body-small underline underline-offset-4"
           :disabled="submitting"
@@ -124,19 +119,44 @@
         :loading="submitting"
         :disabled="!termsAvailable || termsVersionRejected"
       />
-    </form>
-
-    <template #links>
-      <AuthLink v-if="!success && !showTerms" :to="{ name: 'login' }"
-        >Déjà un compte ? Se connecter</AuthLink
+      <p
+        class="flex flex-wrap items-center justify-center gap-x-epolia-2xs text-epolia-body-small text-epolia-text-secondary"
       >
-    </template>
+        <span>Vous avez déjà un compte ?</span>
+        <AuthLink :to="{ name: 'login' }">Se connecter</AuthLink>
+      </p>
+      <template v-if="role === AccountRoleEnum.Customer">
+        <hr class="border-epolia-border" />
+        <RouterLink
+          :to="{ name: 'register', query: { role: AccountRoleEnum.Student } }"
+          class="register-student-link border border-epolia-border"
+        >
+          <span class="register-student-icon">
+            <BaseIcon :icon="IconSchool" :size="20" />
+          </span>
+          <span class="flex min-w-0 flex-1 flex-col text-epolia-body-small font-semibold">
+            <span class="text-epolia-text">Vous êtes étudiant ?</span>
+            <span class="text-epolia-primary">Proposer mes services sur Epolia</span>
+          </span>
+          <BaseIcon :icon="IconArrowForward" :size="20" class="text-epolia-primary" />
+        </RouterLink>
+      </template>
+      <p class="flex items-start gap-epolia-xs text-epolia-body-small text-epolia-text-secondary">
+        <BaseIcon :icon="IconLock" :size="20" class="shrink-0" />
+        <span
+          >Votre nom de famille et votre adresse e-mail ne sont jamais affichés publiquement.</span
+        >
+      </p>
+    </form>
   </AuthLayout>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, useTemplateRef, watch } from 'vue'
-import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteUpdate, RouterLink, useRoute, useRouter } from 'vue-router'
+import IconArrowForward from '~icons/material-symbols/arrow-forward'
+import IconLock from '~icons/material-symbols/lock'
+import IconSchool from '~icons/material-symbols/school'
 import { parseAccountRole } from '@/domains/auth/accountRole'
 import AuthLayout from '@/domains/auth/components/AuthLayout.vue'
 import AuthLink from '@/domains/auth/components/AuthLink.vue'
@@ -148,6 +168,7 @@ import { ApiError } from '@/shared/api/apiClient'
 import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseCheckbox from '@/shared/components/BaseCheckbox.vue'
+import BaseIcon from '@/shared/components/BaseIcon.vue'
 import BaseInput from '@/shared/components/BaseInput.vue'
 import BaseTitle from '@/shared/components/BaseTitle.vue'
 
@@ -167,7 +188,6 @@ const showTerms = ref(false)
 const termsAccepted = ref(false)
 const termsVersionRejected = ref(false)
 const submitting = ref(false)
-const success = ref(false)
 const errors = reactive({
   firstName: '',
   lastName: '',
@@ -177,7 +197,6 @@ const errors = reactive({
   termsAccepted: '',
 })
 const errorMessage = ref(termsAvailable ? '' : 'L’inscription est indisponible pour le moment.')
-const confirmation = useTemplateRef('confirmation')
 const termsActions = useTemplateRef('termsActions')
 const form = useTemplateRef('form')
 let returnToCheckbox = false
@@ -247,14 +266,7 @@ function validateBirthDate() {
 }
 
 async function submit() {
-  if (
-    submitting.value ||
-    success.value ||
-    !role.value ||
-    !termsAvailable ||
-    termsVersionRejected.value
-  )
-    return
+  if (submitting.value || !role.value || !termsAvailable || termsVersionRejected.value) return
 
   errorMessage.value = ''
   errors.firstName = firstName.value.trim() ? '' : 'Indiquez votre prénom.'
@@ -286,9 +298,8 @@ async function submit() {
       termsVersion: demoTermsVersion,
     })
     password.value = ''
-    success.value = true
-    await nextTick()
-    confirmation.value?.focus()
+    // The next step: enter the 6-digit code sent by e-mail.
+    await router.replace({ name: 'email-verification' })
   } catch (error) {
     const code = error instanceof ApiError ? error.code : undefined
     switch (code) {
@@ -333,3 +344,40 @@ async function focusField(name: string) {
   fields.find((field) => field.name === name)?.focus()
 }
 </script>
+
+<style scoped>
+@layer components {
+  .register-names {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--spacing-epolia-sm);
+  }
+
+  .register-student-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-epolia-sm);
+    min-height: 3rem;
+    padding: var(--spacing-epolia-sm);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-epolia-surface);
+  }
+
+  .register-student-link:focus-visible {
+    outline: 2px solid var(--color-epolia-focus);
+    outline-offset: 2px;
+  }
+
+  .register-student-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background-color: var(--color-epolia-secondary-hover);
+    color: var(--color-epolia-primary);
+  }
+}
+</style>

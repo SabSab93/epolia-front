@@ -50,7 +50,7 @@ it.each([AccountRoleEnum.Customer, AccountRoleEnum.Student])(
 
     reply.resolve(
       Response.json({
-        user: { id: 'demo', email, roles: [role], status: 'ACTIVE' },
+        user: { id: 'demo', email, emailVerified: true, roles: [role], status: 'ACTIVE' },
         accessToken: 'test-token',
       }),
     )
@@ -124,7 +124,13 @@ it('preserves a departure requested while login is pending', async () => {
   await guardStarted.promise
   reply.resolve(
     Response.json({
-      user: { id: 'demo', email, roles: [AccountRoleEnum.Customer], status: 'ACTIVE' },
+      user: {
+        id: 'demo',
+        email,
+        emailVerified: true,
+        roles: [AccountRoleEnum.Customer],
+        status: 'ACTIVE',
+      },
       accessToken: 'test-token',
     }),
   )
@@ -157,4 +163,23 @@ it('hides the session retry action while showing a login error', async () => {
   expect(wrapper.get('[role="alert"]').text()).toBe('Adresse e-mail ou mot de passe incorrect.')
   expect(wrapper.findAll('button').some((button) => button.text() === 'Réessayer')).toBe(false)
   expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+})
+
+it('opens the code screen after login when the address is not confirmed yet', async () => {
+  const user = { id: 'demo', email, emailVerified: false, roles: [AccountRoleEnum.Customer] }
+  vi.stubGlobal(
+    'fetch',
+    vi.fn<typeof fetch>(async (url) =>
+      new URL(String(url)).pathname === '/api/auth/login'
+        ? Response.json({ user: { ...user, status: 'ACTIVE' }, accessToken: 'test-token' })
+        : Response.json(user),
+    ),
+  )
+  const { router, wrapper, submit, fillForm } = await openLogin()
+  await fillForm()
+  await submit()
+
+  await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('email-verification'))
+  await flushPromises()
+  expect(wrapper.text()).toContain('Saisissez le code à 6 chiffres envoyé à personne@example.test.')
 })
