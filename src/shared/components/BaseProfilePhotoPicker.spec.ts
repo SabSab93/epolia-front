@@ -106,6 +106,27 @@ describe('BaseProfilePhotoPicker', () => {
     expect(revokeObjectURL).toHaveBeenCalledWith(remainingPreview)
   })
 
+  it.each([
+    [{ acceptedTypes: ['image/jpeg'] }, 'Choisissez une image au format JPEG.'],
+    [{ maxSizeBytes: 1 }, 'Choisissez une image de 0,000001 Mo maximum.'],
+  ] as const)('revalidates constraints changed during decoding (%j)', async (limits, message) => {
+    const { wrapper, selectFile } = renderPicker(photo('profil.png'))
+    let finish!: () => void
+    decode.mockImplementationOnce(() => new Promise<void>((resolve) => (finish = resolve)))
+    await selectFile(photo('nouvelle.png'))
+    expect(wrapper.get('[role="status"]').text()).toBe('Préparation de l’aperçu…')
+
+    await wrapper.setProps(limits)
+    finish()
+    await flushPromises()
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    expect(wrapper.get('[role="alert"]').text()).toBe(message)
+    expect(wrapper.get('[role="status"]').text()).toContain('profil.png')
+    expect(wrapper.getComponent(BaseAvatar).props('src')).toBe('blob:photo-1')
+    expect(revokeObjectURL).toHaveBeenCalledExactlyOnceWith('blob:photo-2')
+  })
+
   it('ignores an earlier decode that completes after a newer selection', async () => {
     const { wrapper, selectFile } = renderPicker()
     let finishFirst!: () => void

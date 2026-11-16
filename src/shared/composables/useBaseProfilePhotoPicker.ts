@@ -20,7 +20,7 @@ export function useBaseProfilePhotoPicker(
   const errorId = useId()
   const previewUrl = ref('')
   const error = ref('')
-  let pendingUrl = ''
+  const pendingUrl = ref('')
 
   const accept = computed(() => limits.acceptedTypes.join(','))
   const formats = computed(() =>
@@ -31,9 +31,10 @@ export function useBaseProfilePhotoPicker(
       limits.maxSizeBytes / 1_000_000,
     ),
   )
-  const status = computed(() =>
-    photo.value ? `Aperçu local : ${photo.value.name}` : 'Aucune photo sélectionnée.',
-  )
+  const status = computed(() => {
+    if (pendingUrl.value) return 'Préparation de l’aperçu…'
+    return photo.value ? `Aperçu local : ${photo.value.name}` : 'Aucune photo sélectionnée.'
+  })
 
   watch(
     photo,
@@ -48,13 +49,23 @@ export function useBaseProfilePhotoPicker(
   onScopeDispose(cancelPendingPreview)
 
   function cancelPendingPreview() {
-    if (!pendingUrl) return
-    URL.revokeObjectURL(pendingUrl)
-    pendingUrl = ''
+    if (!pendingUrl.value) return
+    URL.revokeObjectURL(pendingUrl.value)
+    pendingUrl.value = ''
   }
 
   function openPicker() {
     fileInput.value?.click()
+  }
+
+  function validateFile(file: File) {
+    if (!file.type.startsWith('image/') || !limits.acceptedTypes.includes(file.type)) {
+      return `Choisissez une image au format ${formats.value}.`
+    }
+    if (file.size > limits.maxSizeBytes) {
+      return `Choisissez une image de ${maxSize.value} Mo maximum.`
+    }
+    return ''
   }
 
   async function selectPhoto(event: Event) {
@@ -64,28 +75,24 @@ export function useBaseProfilePhotoPicker(
 
     input.value = ''
     cancelPendingPreview()
-    error.value = ''
-    if (!file.type.startsWith('image/') || !limits.acceptedTypes.includes(file.type)) {
-      error.value = `Choisissez une image au format ${formats.value}.`
-      return
-    }
-    if (file.size > limits.maxSizeBytes) {
-      error.value = `Choisissez une image de ${maxSize.value} Mo maximum.`
-      return
-    }
+    error.value = validateFile(file)
+    if (error.value) return
 
     const url = URL.createObjectURL(file)
-    pendingUrl = url
+    pendingUrl.value = url
     try {
       const image = new Image()
       image.src = url
       await image.decode()
-      if (pendingUrl === url) photo.value = file
+      if (pendingUrl.value !== url) return
+
+      error.value = validateFile(file)
+      if (!error.value) photo.value = file
     } catch {
-      if (pendingUrl === url)
+      if (pendingUrl.value === url)
         error.value = 'Impossible d’ouvrir cette image. Choisissez une autre photo.'
     } finally {
-      if (pendingUrl === url) cancelPendingPreview()
+      if (pendingUrl.value === url) cancelPendingPreview()
     }
   }
 

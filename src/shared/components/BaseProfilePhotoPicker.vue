@@ -1,9 +1,9 @@
 <template>
   <fieldset class="flex min-w-0 flex-col gap-epolia-sm">
     <legend class="mb-epolia-xs text-epolia-body font-semibold">Photo de profil</legend>
-    <div class="flex flex-wrap items-center gap-epolia-md">
-      <BaseAvatar :src="previewUrl" :initials="initials" alt="" size="xl" />
-      <div class="flex flex-wrap gap-epolia-xs">
+    <div class="flex items-start gap-epolia-md">
+      <BaseAvatar :src="previewUrl" :initials="initials" alt="" size="xl" class="shrink-0" />
+      <div class="flex min-w-0 flex-1 flex-col items-start gap-epolia-xs">
         <BaseButton
           ref="pickerButton"
           :label="photo ? 'Remplacer la photo' : 'Choisir une photo'"
@@ -21,7 +21,11 @@
     <p role="status" class="text-epolia-body-small text-epolia-text-secondary wrap-anywhere">
       {{ status }}
     </p>
-    <p :id="errorId" role="alert" class="text-epolia-body-small text-epolia-error">
+    <p
+      :id="errorId"
+      role="alert"
+      :class="error ? 'text-epolia-body-small text-epolia-error' : 'sr-only'"
+    >
       {{ error }}
     </p>
   </fieldset>
