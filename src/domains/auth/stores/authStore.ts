@@ -5,6 +5,8 @@ import {
   fetchCurrentUser,
   login as loginRequest,
   register as registerRequest,
+  requestVerificationCode,
+  verifyEmailCode as verifyEmailCodeRequest,
 } from '@/domains/auth/api/authApi'
 import type { LoginInputDto } from '@/domains/auth/models/dtos/loginInput.dto'
 import type { RegisterInputDto } from '@/domains/auth/models/dtos/registerInput.dto'
@@ -15,6 +17,15 @@ import type { SessionStatusType } from '@/domains/auth/models/types/sessionStatu
 import { readAccessToken, writeAccessToken } from '@/domains/auth/stores/sessionStorage'
 import { ApiError } from '@/shared/api/apiClient'
 
+// One rule for every account request: 401 ends the session, and a 403 means the account
+// can no longer use it. A locked e-mail verification is a 403 too, but the session stays valid.
+function sessionEndReason(error: unknown): SessionClearReasonType | undefined {
+  if (!(error instanceof ApiError)) return undefined
+  if (error.status === 401) return 'expired'
+  if (error.status === 403 && error.code !== 'EMAIL_VERIFICATION_LOCKED') return 'forbidden'
+  return undefined
+}
+
 function ensureNotAborted(signal: AbortSignal) {
   if (signal.aborted) throw new DOMException('Authentication cancelled', 'AbortError')
 }
@@ -24,6 +35,8 @@ export const useAuthStore = defineStore('auth', () => {
   const status = ref<SessionStatusType>('idle')
   const removalFailed = ref(false)
   const persistenceFailed = ref(false)
+  // Result of the last confirmation e-mail request; undefined when unknown (e.g. after login).
+  const verificationEmailSent = ref<boolean>()
   const isAuthenticated = computed(() => user.value !== null)
 
   // Keep only the confirmed user in shared reactive state. The token stays private.
@@ -53,6 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
     storageRead = true
     user.value = null
     persistenceFailed.value = false
+    verificationEmailSent.value = undefined
     status.value = reason
     return persistToken(null).then(
       () => {
@@ -87,10 +101,14 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       if (signal.aborted) return
 
-      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
-        await clearSession(error.status === 401 ? 'expired' : 'forbidden')
+      const reason = sessionEndReason(error)
+      if (reason) {
+        await clearSession(reason)
+      } else if (user.value) {
+        // A session the server already confirmed in this run stays usable during a network
+        // failure (e.g. right after registration): the next request reports an invalid token.
+        status.value = 'authenticated'
       } else {
-        user.value = null
         status.value = 'unavailable'
       }
     }
@@ -140,6 +158,7 @@ export const useAuthStore = defineStore('auth', () => {
           accessToken = session.accessToken
           storageRead = true
           user.value = session.user
+          verificationEmailSent.value = session.emailVerificationSent
           status.value = 'authenticated'
           persistenceFailed.value = !saved
         })
@@ -170,6 +189,8 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         return await activateRoleRequest(role, token, signal)
       } catch (error) {
+        // Narrower than sessionEndReason: a role can be refused (e.g. ADULT_REQUIRED) while the
+        // session stays valid, so only an inactive account ends it.
         if (!signal.aborted && error instanceof ApiError) {
           if (error.status === 401) await clearSession('expired')
           if (error.code === 'ACCOUNT_NOT_ACTIVE') await clearSession('forbidden')
@@ -177,6 +198,54 @@ export const useAuthStore = defineStore('auth', () => {
         throw error
       }
     })
+  }
+
+  async function handleSessionError(error: unknown) {
+    const reason = sessionEndReason(error)
+    if (reason) await clearSession(reason)
+  }
+
+  // Reads the account again without signing out on a network error.
+  async function refreshUser() {
+    const token = accessToken
+    if (!token) throw new Error('Authentication required')
+    try {
+      const freshUser = await fetchCurrentUser(token)
+      if (accessToken === token) user.value = freshUser
+    } catch (error) {
+      await handleSessionError(error)
+      throw error
+    }
+  }
+
+  async function resendVerificationCode() {
+    const token = accessToken
+    if (!token) throw new Error('Authentication required')
+    try {
+      await requestVerificationCode(token)
+      if (accessToken === token) verificationEmailSent.value = true
+    } catch (error) {
+      await handleSessionError(error)
+      throw error
+    }
+  }
+
+  async function verifyEmailCode(code: string) {
+    const token = accessToken
+    if (!token) throw new Error('Authentication required')
+    let confirmed: boolean
+    try {
+      confirmed = await verifyEmailCodeRequest(code, token)
+    } catch (error) {
+      await handleSessionError(error)
+      throw error
+    }
+    // The server answer is the saved state: show it even if the account cannot be read again.
+    if (confirmed && accessToken === token && user.value) {
+      user.value = { ...user.value, emailVerified: true }
+    }
+    // Then read the whole account again; a network failure here does not undo the confirmation.
+    await refreshUser().catch(() => {})
   }
 
   function logout() {
@@ -191,12 +260,16 @@ export const useAuthStore = defineStore('auth', () => {
     status,
     removalFailed,
     persistenceFailed,
+    verificationEmailSent,
     isAuthenticated,
     isRestoring,
     restore,
     login,
     register,
     activateRole,
+    refreshUser,
+    resendVerificationCode,
+    verifyEmailCode,
     logout,
   }
 })

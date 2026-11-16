@@ -21,6 +21,7 @@ function isAuthUser(value: unknown): value is AuthUserType {
     typeof value.id === 'string' &&
     value.id.length > 0 &&
     (typeof value.email === 'string' || value.email === null) &&
+    typeof value.emailVerified === 'boolean' &&
     Array.isArray(value.roles) &&
     value.roles.every(isUserRole)
   )
@@ -53,8 +54,16 @@ async function authenticate(
   }
 
   return {
-    user: { id: data.user.id, email: data.user.email, roles: data.user.roles, status: 'ACTIVE' },
+    user: {
+      id: data.user.id,
+      email: data.user.email,
+      emailVerified: data.user.emailVerified,
+      roles: data.user.roles,
+      status: 'ACTIVE',
+    },
     accessToken: data.accessToken,
+    emailVerificationSent:
+      typeof data.emailVerificationSent === 'boolean' ? data.emailVerificationSent : undefined,
   }
 }
 
@@ -84,5 +93,30 @@ export async function fetchCurrentUser(
     throw new Error('Unexpected current user response')
   }
 
-  return { id: data.id, email: data.email, roles: data.roles }
+  return { id: data.id, email: data.email, emailVerified: data.emailVerified, roles: data.roles }
+}
+
+/** Accepted by the sending service only: it does not prove the message arrived. */
+export async function requestVerificationCode(accessToken: string, signal?: AbortSignal) {
+  await apiFetch('/api/auth/email-verification', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal,
+  })
+}
+
+/** Checks the 6-digit code received by e-mail. Returns true when the server confirmed the address. */
+export async function verifyEmailCode(
+  code: string,
+  accessToken: string,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const response = await apiFetch('/api/auth/email-verification/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ code }),
+    signal,
+  })
+  const data: unknown = await response.json().catch(() => null)
+  return isRecord(data) && data.emailVerified === true
 }

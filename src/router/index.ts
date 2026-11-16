@@ -44,6 +44,12 @@ export function createAppRouter(history: RouterHistory, pinia?: Pinia) {
         meta: { title: 'Se connecter' },
         component: () => import('@/domains/auth/views/LoginView.vue'),
       },
+      {
+        path: '/compte/confirmer-e-mail',
+        name: 'email-verification',
+        meta: { title: 'Confirmer votre adresse e-mail', requiresAuth: true },
+        component: () => import('@/domains/auth/views/EmailVerificationView.vue'),
+      },
     ],
   })
 

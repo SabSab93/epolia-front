@@ -14,6 +14,10 @@ afterEach(() => {
   sessionStorage.clear()
 })
 
+function currentUser(role: AccountRoleEnum) {
+  return { id: 'id', email: 'camille@example.fr', emailVerified: false, roles: [role] }
+}
+
 async function openRegistration(role = AccountRoleEnum.Student) {
   const pinia = createPinia()
   const router = createAppRouter(createMemoryHistory(), pinia)
@@ -22,7 +26,7 @@ async function openRegistration(role = AccountRoleEnum.Student) {
 
   const button = (label: string) => wrapper.findAll('button').find((item) => item.text() === label)!
   const input = (name: string) => wrapper.get<HTMLInputElement>(`input[name="${name}"]`)
-  const readTerms = () => button('Lire les conditions d’utilisation').trigger('click')
+  const readTerms = () => button('Lire les conditions générales d’utilisation').trigger('click')
   const submit = () => wrapper.get('form').trigger('submit')
   async function fillForm() {
     await input('firstName').setValue('Camille')
@@ -90,7 +94,9 @@ it.each([false, true])(
     expect(input('termsAccepted').element.checked).toBe(false)
     expect(input('email').element.value).toBe('camille@example.fr')
     expect(button('Créer mon compte').element.disabled).toBe(false)
-    expect(document.activeElement).toBe(button('Lire les conditions d’utilisation').element)
+    expect(document.activeElement).toBe(
+      button('Lire les conditions générales d’utilisation').element,
+    )
     await submit()
     expect(fetchMock).not.toHaveBeenCalled()
   },
@@ -100,16 +106,22 @@ it.each([AccountRoleEnum.Student, AccountRoleEnum.Customer])(
   'creates an account using the selected role (%s) and submits only once',
   async (role) => {
     const reply = deferred<Response>()
-    const fetchMock = vi.fn<typeof fetch>().mockReturnValue(reply.promise)
+    // After registration, the private verification page reads the account again.
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockReturnValueOnce(reply.promise)
+      .mockImplementation(async () => Response.json(currentUser(role)))
     vi.stubGlobal('fetch', fetchMock)
-    const { wrapper, button, fillForm, readTerms, submit } = await openRegistration(role)
+    const { router, wrapper, button, fillForm, readTerms, submit } = await openRegistration(role)
     await fillForm()
     expect(button('Créer mon compte').element.disabled).toBe(false)
     await readTerms()
     expect(wrapper.text()).toContain('CGU à compléter')
     expect(fetchMock).not.toHaveBeenCalled()
     await button('Accepter').trigger('click')
-    expect(document.activeElement).toBe(button('Lire les conditions d’utilisation').element)
+    expect(document.activeElement).toBe(
+      button('Lire les conditions générales d’utilisation').element,
+    )
 
     await submit()
     await submit()
@@ -129,15 +141,23 @@ it.each([AccountRoleEnum.Student, AccountRoleEnum.Customer])(
     reply.resolve(
       Response.json(
         {
-          user: { id: 'id', email: 'camille@example.fr', roles: [role], status: 'ACTIVE' },
+          user: {
+            id: 'id',
+            email: 'camille@example.fr',
+            emailVerified: false,
+            roles: [role],
+            status: 'ACTIVE',
+          },
           accessToken: 'test-token',
+          emailVerificationSent: true,
         },
         { status: 201 },
       ),
     )
     await flushPromises()
-    expect(wrapper.text()).toContain('Votre compte est créé')
-    expect(document.activeElement?.textContent).toContain('Votre compte est créé')
+    await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('email-verification'))
+    await flushPromises()
+    expect(wrapper.text()).toContain('Nous avons envoyé un code à 6 chiffres à camille@example.fr.')
   },
 )
 
@@ -169,7 +189,13 @@ it('preserves the draft and blocks reuse of the rejected terms version', async (
 
 it('blocks a role change during submission and resets the form for the next role', async () => {
   const reply = deferred<Response>()
-  vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockReturnValue(reply.promise))
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn<typeof fetch>()
+      .mockReturnValueOnce(reply.promise)
+      .mockImplementation(async () => Response.json(currentUser(AccountRoleEnum.Student))),
+  )
   const { router, wrapper, button, input, readTerms, fillForm, submit } = await openRegistration()
   const customerRegistration = { name: 'register', query: { role: AccountRoleEnum.Customer } }
   await fillForm()
@@ -185,6 +211,7 @@ it('blocks a role change during submission and resets the form for the next role
         user: {
           id: 'id',
           email: 'camille@example.fr',
+          emailVerified: false,
           roles: [AccountRoleEnum.Student],
           status: 'ACTIVE',
         },
@@ -194,11 +221,10 @@ it('blocks a role change during submission and resets the form for the next role
     ),
   )
   await flushPromises()
-  expect(wrapper.text()).toContain('Votre compte est créé')
+  await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('email-verification'))
 
   await router.push(customerRegistration)
-  expect(wrapper.text()).toContain('Compte particulier')
-  expect(wrapper.text()).not.toContain('Votre compte est créé')
+  expect(wrapper.text()).toContain('Vous êtes étudiant ?')
   expect(input('email').element.value).toBe('')
   expect(input('termsAccepted').element.checked).toBe(false)
 })
@@ -382,4 +408,32 @@ it('shows only the field error for a short password and submits at eight charact
   expect(fetchMock).toHaveBeenCalledTimes(1)
   reply.resolve(Response.json({}, { status: 503 }))
   await flushPromises()
+})
+
+it('opens the code screen after registration even if the account cannot be read again', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn<typeof fetch>(async (url) => {
+      if (new URL(String(url)).pathname === '/api/auth/me') throw new TypeError('offline')
+      return Response.json(
+        {
+          user: { ...currentUser(AccountRoleEnum.Customer), status: 'ACTIVE' },
+          accessToken: 'test-token',
+          emailVerificationSent: true,
+        },
+        { status: 201 },
+      )
+    }),
+  )
+  const { router, wrapper, button, readTerms, fillForm, submit } = await openRegistration(
+    AccountRoleEnum.Customer,
+  )
+  await fillForm()
+  await readTerms()
+  await button('Accepter').trigger('click')
+  await submit()
+
+  await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('email-verification'))
+  await flushPromises()
+  expect(wrapper.text()).toContain('Nous avons envoyé un code à 6 chiffres à camille@example.fr.')
 })

@@ -87,6 +87,12 @@ export function useLoginForm() {
     if (departures !== departure || router.currentRoute.value !== origin || !auth.isAuthenticated)
       return
 
+    // An unconfirmed address comes first: the code screen is the only place to confirm it.
+    if (auth.user?.emailVerified === false) {
+      await router.replace({ name: 'email-verification' })
+      return
+    }
+
     const destination = origin.redirectedFrom
     if (destination?.matched.some(({ meta }) => meta.requiresAuth)) {
       await router.replace(destination.fullPath)

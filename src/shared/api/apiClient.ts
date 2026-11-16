@@ -11,6 +11,8 @@ export class ApiError extends Error {
     readonly status: number,
     statusText: string,
     readonly code?: string,
+    /** Parsed JSON error body, for details such as remaining attempts. */
+    readonly body?: unknown,
   ) {
     super(`HTTP ${status}: ${statusText}`)
     this.name = 'ApiError'
@@ -31,7 +33,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       body && typeof body === 'object' && 'code' in body && typeof body.code === 'string'
         ? body.code
         : undefined
-    throw new ApiError(response.status, response.statusText, code)
+    throw new ApiError(response.status, response.statusText, code, body ?? undefined)
   }
 
   return response
