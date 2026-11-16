@@ -56,8 +56,8 @@ it('navigates through the public auth screens and restores focus on return to th
   expect(
     roleOptions.map((option) => wrapper.get(`#${option.attributes('aria-describedby')}`).text()),
   ).toEqual([
-    'Décrivez votre besoin et trouvez un étudiant pour vous aider, par exemple pour des cours, un dépannage informatique ou un projet créatif.',
-    'Présentez vos compétences, proposez vos services et choisissez des missions qui s’accordent avec votre emploi du temps.',
+    'Créez un compte pour trouver de l’aide pour une mission, par exemple des cours, un dépannage informatique ou un projet créatif.',
+    'Créez un compte pour présenter votre profil et proposer des services liés à vos études.',
   ])
 
   const continueButton = wrapper.get('button:disabled')
