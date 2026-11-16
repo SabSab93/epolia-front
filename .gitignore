@@ -14,3 +14,5 @@ ios/App/build/
 # Android signing keys
 *.jks
 *.keystore
+key.properties
+keystore.properties

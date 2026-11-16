@@ -12,13 +12,21 @@ const config: StorybookConfig = {
     },
   },
   viteFinal(config) {
-    return mergeConfig(config, {
-      resolve: {
-        alias: {
-          '@': fileURLToPath(new URL('../src', import.meta.url)),
+    // Storybook never calls the API: drop the VITE_API_URL check of the app build.
+    const plugins = (config.plugins ?? []).filter(
+      (plugin) => !(plugin && 'name' in plugin && plugin.name === 'epolia:check-api-url'),
+    )
+
+    return mergeConfig(
+      { ...config, plugins },
+      {
+        resolve: {
+          alias: {
+            '@': fileURLToPath(new URL('../src', import.meta.url)),
+          },
         },
       },
-    })
+    )
   },
 }
 
