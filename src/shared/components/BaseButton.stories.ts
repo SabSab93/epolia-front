@@ -22,7 +22,10 @@ const meta = {
     iconPosition: 'none',
   },
   argTypes: {
-    variant: { control: 'select', options: ['primary', 'secondary', 'tertiary'] },
+    variant: {
+      control: 'select',
+      options: ['primary', 'secondary', 'tertiary', 'danger', 'info', 'warning'],
+    },
     type: { control: 'select', options: ['button', 'submit', 'reset'] },
     iconPosition: {
       name: 'Icône',
@@ -35,7 +38,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Bouton mobile Epolia : primary rempli, secondary avec contour, tertiary sans contour. Zone tactile minimale de 48 × 48 px CSS. Le chargement bloque les clics et conserve le libellé. Icône facultative par le slot `icon-left` ou `icon-right` (un seul à la fois, non vérifié par le composant), avec `<BaseIcon :icon="…" :size="20" />` sans `label` : le libellé du bouton suffit, l’icône est masquée aux lecteurs d’écran. Pendant le chargement, le spinner prend la place de l’icône (à gauche sans icône). Palette provisoire ; aucune variante de mode sombre.',
+          'Bouton mobile Epolia : primary rempli, secondary avec contour, tertiary sans contour. Trois variantes d’état, remplies comme primary : danger (rouge, action destructrice), info (gris foncé), warning (orange), avec les couleurs de BaseAlert. La couleur ne suffit pas : le libellé doit dire l’action (« Supprimer », pas « OK »). Couleurs dans `main.css` (`--color-epolia-danger`, `-info`, `-warning`). Zone tactile minimale de 48 × 48 px CSS. Le chargement bloque les clics et conserve le libellé. Icône facultative par le slot `icon-left` ou `icon-right` (un seul à la fois, non vérifié par le composant), avec `<BaseIcon :icon="…" :size="20" />` sans `label` : le libellé du bouton suffit, l’icône est masquée aux lecteurs d’écran. Pendant le chargement, le spinner prend la place de l’icône (à gauche sans icône). Palette provisoire ; aucune variante de mode sombre.',
       },
     },
   },
@@ -70,6 +73,14 @@ type Story = StoryObj<typeof meta>
 export const Primary: Story = {}
 export const Secondary: Story = { args: { variant: 'secondary', label: 'Revenir' } }
 export const Tertiary: Story = { args: { variant: 'tertiary', label: 'Plus tard' } }
+export const Danger: Story = { args: { variant: 'danger', label: 'Supprimer le document' } }
+export const Info: Story = { args: { variant: 'info', label: 'En savoir plus' } }
+export const Warning: Story = { args: { variant: 'warning', label: 'Annuler la mission' } }
+export const DangerLongLabel: Story = {
+  name: 'Danger et texte long',
+  args: { variant: 'danger', label: 'Supprimer définitivement mon compte et toutes mes données' },
+  decorators: [() => ({ template: '<div class="max-w-xs"><story /></div>' })],
+}
 export const Disabled: Story = { args: { disabled: true } }
 export const Loading: Story = { args: { loading: true, label: 'Enregistrement en cours' } }
 export const IconLeft: Story = {

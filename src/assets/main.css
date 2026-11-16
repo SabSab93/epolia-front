@@ -80,6 +80,23 @@
   --color-epolia-overlay: color-mix(in srgb, var(--color-epolia-text) 50%, transparent);
 }
 
+/*
+ * Status colors for filled buttons (BaseButton variants danger, info, warning).
+ * Same colors as BaseAlert; hover and active are darker. The label uses
+ * --color-epolia-primary-text (white): at least 4.5:1 in every state.
+ */
+@theme {
+  --color-epolia-danger: var(--color-epolia-alert-error);
+  --color-epolia-danger-hover: color-mix(in srgb, var(--color-epolia-danger) 85%, black);
+  --color-epolia-danger-active: color-mix(in srgb, var(--color-epolia-danger) 70%, black);
+  --color-epolia-info: var(--color-epolia-alert-info);
+  --color-epolia-info-hover: color-mix(in srgb, var(--color-epolia-info) 85%, black);
+  --color-epolia-info-active: color-mix(in srgb, var(--color-epolia-info) 70%, black);
+  --color-epolia-warning: var(--color-epolia-alert-warning);
+  --color-epolia-warning-hover: color-mix(in srgb, var(--color-epolia-warning) 85%, black);
+  --color-epolia-warning-active: color-mix(in srgb, var(--color-epolia-warning) 70%, black);
+}
+
 :root {
   --radius: 0.5rem;
 }

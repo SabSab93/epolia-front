@@ -109,36 +109,82 @@ export const WithForm = {
   }),
 } satisfies Story
 
+// One modal whose action uses a status variant of BaseButton (danger, warning or info).
+function statusRender(
+  opener: string,
+  action: string,
+  variant: 'danger' | 'warning' | 'info',
+  result: string,
+) {
+  return (args: ModalStoryArgs) => ({
+    components: { BaseButton, BaseModal },
+    setup() {
+      const open = ref(false)
+      const message = ref('')
+      function confirm() {
+        // The consumer owns the action.
+        message.value = result
+        open.value = false
+      }
+      return { args, open, message, confirm, opener, action, variant }
+    },
+    template: `
+      <div class="flex flex-col items-start gap-epolia-md">
+        <BaseButton :label="opener" variant="secondary" @click="open = true" />
+        <p role="status" class="text-epolia-body">{{ message }}</p>
+      </div>
+      <BaseModal v-model:open="open" v-bind="args">
+        <template #actions>
+          <BaseButton :label="action" :variant="variant" @click="confirm" />
+        </template>
+      </BaseModal>
+    `,
+  })
+}
+
 export const Confirmation = {
-  name: 'Confirmation',
+  name: 'Confirmation (danger)',
   args: {
     title: 'Supprimer ce document ?',
     description: 'Le document sera retiré de votre profil. Cette action est définitive.',
     confirmation: true,
     cancelLabel: undefined,
   },
-  render: (args) => ({
-    components: { BaseButton, BaseModal },
-    setup() {
-      const open = ref(false)
-      const result = ref('')
-      function confirm() {
-        // The consumer owns the destructive action.
-        result.value = 'Document supprimé.'
-        open.value = false
-      }
-      return { args, open, result, confirm }
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Action destructrice : bouton `danger`. Si le bouton qui a ouvert la modale disparaît pendant l’action (par exemple la ligne supprimée), le focus ne peut pas y revenir et repart en haut de la page : c’est à l’écran parent de le déplacer après la fermeture, vers le titre de la liste ou l’élément suivant.',
+      },
     },
-    template: `
-      <div class="flex flex-col items-start gap-epolia-md">
-        <BaseButton label="Supprimer le document" variant="secondary" @click="open = true" />
-        <p role="status" class="text-epolia-body">{{ result }}</p>
-      </div>
-      <BaseModal v-model:open="open" v-bind="args">
-        <template #actions>
-          <BaseButton label="Supprimer" @click="confirm" />
-        </template>
-      </BaseModal>
-    `,
-  }),
+  },
+  render: statusRender('Supprimer le document', 'Supprimer', 'danger', 'Document supprimé.'),
+} satisfies Story
+
+export const WarningConfirmation = {
+  name: 'Confirmation (warning)',
+  args: {
+    title: 'Annuler cette mission ?',
+    description: 'L’étudiant sera prévenu de l’annulation.',
+    confirmation: true,
+    cancelLabel: 'Garder la mission',
+  },
+  parameters: {
+    docs: { description: { story: 'Action à risque mais pas destructrice : bouton `warning`.' } },
+  },
+  render: statusRender('Annuler la mission', 'Annuler la mission', 'warning', 'Mission annulée.'),
+} satisfies Story
+
+export const InfoDialog = {
+  name: 'Dialogue (info)',
+  args: {
+    title: 'Votre profil est en relecture',
+    description: 'Il sera visible dès que votre justificatif étudiant aura été vérifié.',
+    confirmation: false,
+    cancelLabel: 'Plus tard',
+  },
+  parameters: {
+    docs: { description: { story: 'Action d’information : bouton `info`.' } },
+  },
+  render: statusRender('Voir mon profil', 'Voir les étapes', 'info', 'Étapes affichées.'),
 } satisfies Story

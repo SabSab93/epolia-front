@@ -1,6 +1,12 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import meta, { Confirmation, LongContent, WithForm } from '@/shared/components/BaseModal.stories'
+import meta, {
+  Confirmation,
+  InfoDialog,
+  LongContent,
+  WarningConfirmation,
+  WithForm,
+} from '@/shared/components/BaseModal.stories'
 
 enableAutoUnmount(afterEach)
 
@@ -54,5 +60,18 @@ describe('BaseModal stories', () => {
     expect(dialog()).toBeNull()
     expect(wrapper.get('[role="status"]').text()).toBe('Document supprimé.')
     expect(document.activeElement).toBe(wrapper.get('button').element)
+  })
+
+  it.each([
+    [Confirmation, 'Supprimer', 'bg-epolia-danger', 'alertdialog'],
+    [WarningConfirmation, 'Annuler la mission', 'bg-epolia-warning', 'alertdialog'],
+    [InfoDialog, 'Voir les étapes', 'bg-epolia-info', 'dialog'],
+  ] as const)('shows the status action %#', async (story, label, color, role) => {
+    await openStory(story.render({ ...meta.args, ...story.args }))
+    expect(dialog()!.getAttribute('role')).toBe(role)
+    const action = Array.from(dialog()!.querySelectorAll<HTMLButtonElement>('button')).find(
+      (b) => b.textContent?.trim() === label,
+    )!
+    expect(action.classList).toContain(color)
   })
 })

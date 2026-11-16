@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { h } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import IconArrowForward from '~icons/material-symbols/arrow-forward'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseIcon from '@/shared/components/BaseIcon.vue'
@@ -13,6 +13,24 @@ describe('BaseButton', () => {
     expect(wrapper.attributes('type')).toBe('button')
     expect(wrapper.text()).toBe('Continuer')
     expect(wrapper.classes()).toContain('bg-epolia-primary')
+  })
+
+  it.each([
+    ['danger', 'bg-epolia-danger'],
+    ['info', 'bg-epolia-info'],
+    ['warning', 'bg-epolia-warning'],
+  ] as const)('fills the %s variant with its status color and readable text', (variant, bg) => {
+    const wrapper = mount(BaseButton, { props: { label: 'Supprimer', variant } })
+    expect(wrapper.classes()).toContain(bg)
+    expect(wrapper.classes()).toContain('text-epolia-primary-text')
+    expect(wrapper.classes()).not.toContain('bg-epolia-primary')
+  })
+
+  it('shows the neutral disabled style on a status variant', () => {
+    const wrapper = mount(BaseButton, {
+      props: { label: 'Supprimer', variant: 'danger', disabled: true },
+    })
+    expect(wrapper.classes()).toContain('disabled:bg-epolia-input-disabled')
   })
 
   it('forwards an explicit submit type and accessibility attributes', () => {
@@ -70,6 +88,27 @@ describe('BaseButton', () => {
     expect(icon.attributes('aria-hidden')).toBe('true')
     expect(icon.attributes('tabindex')).toBeUndefined()
     expect(wrapper.text()).toBe('Continuer')
+  })
+
+  it('moves the spinner to the right when a right icon appears after the first render', async () => {
+    const hasIcon = ref(false)
+    const wrapper = mount(
+      defineComponent({
+        setup: () => () =>
+          h(
+            BaseButton,
+            { label: 'Envoyer', loading: true },
+            hasIcon.value
+              ? { 'icon-right': () => h(BaseIcon, { icon: IconArrowForward, size: 20 }) }
+              : {},
+          ),
+      }),
+    )
+    const button = () => wrapper.element as HTMLButtonElement
+    expect(button().children[0]).toBe(wrapper.getComponent(BaseLoader).element)
+    hasIcon.value = true
+    await nextTick()
+    expect(button().children[1]).toBe(wrapper.getComponent(BaseLoader).element)
   })
 
   it.each([
