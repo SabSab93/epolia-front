@@ -86,10 +86,15 @@ Les licences originales accompagnent les fichiers, sans appel à un CDN.
   doivent pas être confondues avec les pixels CSS ou physiques.
 - Une action principale par groupe. Libellé explicite : « Enregistrer » plutôt
   que « OK ». Un bouton déclenche une action ; un lien sert à naviguer.
-- Un seul composant **`BaseButton`** : `primary` rempli pour l'action principale,
-  `secondary` avec contour pour l'alternative, `tertiary` sans contour pour
-  l'action discrète. Le nom `outline` n'est pas une quatrième variante.
-- Même taille tactile pour les trois variantes ; `type="button"` par défaut,
+- Un seul composant **`BaseButton`**, six variantes. Trois de hiérarchie :
+  `primary` rempli pour l'action principale, `secondary` avec contour pour
+  l'alternative, `tertiary` sans contour pour l'action discrète (il n'y a pas
+  de variante `outline` : c'est `secondary`). Trois d'état, remplies comme
+  `primary`, avec les couleurs de `BaseAlert` : `danger` (rouge) pour une
+  action destructrice (supprimer, retirer), `warning` (orange) pour une action
+  à risque, `info` (gris foncé) pour une action d'information. Le libellé dit
+  toujours l'action : la couleur seule ne suffit pas.
+- Même taille tactile pour toutes les variantes ; `type="button"` par défaut,
   `type="submit"` explicite pour envoyer un formulaire.
 - États à prévoir : normal, appuyé, focus visible, désactivé, chargement.
   Les boutons remplis ou à contour gardent un fond neutre, une bordure et un texte lisible quand ils sont désactivés.
