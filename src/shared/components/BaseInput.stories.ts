@@ -44,6 +44,7 @@ const meta = {
     readonly: { control: 'boolean' },
     clearable: { control: 'boolean' },
     rows: { control: { type: 'number', min: 1 }, if: { arg: 'type', eq: 'textarea' } },
+    maxlength: { name: 'Longueur maximale', control: { type: 'number', min: 1 } },
     autocomplete: {
       control: 'select',
       options: ['current-password', 'new-password'],
@@ -106,6 +107,29 @@ export const Textarea: Story = {
     error: 'Précisez votre demande.',
   },
 }
+export const TextareaWithCounter: Story = {
+  name: 'Area avec compteur',
+  args: {
+    type: 'textarea',
+    label: 'Présentez-vous en quelques mots',
+    ariaLabel: 'Présentez-vous en quelques mots',
+    placeholder: undefined,
+    modelValue:
+      'Étudiante en Master Informatique, je vous aide à installer vos appareils et à prendre en main vos logiciels, avec patience et sans jargon.',
+    maxlength: 350,
+    help: 'Visible sur votre profil',
+    showHelp: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`maxlength` limite la saisie et affiche le compteur à droite de l’aide. Le compteur est masqué aux lecteurs d’écran, qui le reliraient à chaque frappe ; le champ est relié à la place à une phrase fixe (« 350 caractères maximum. »). Essais TalkBack et VoiceOver à effectuer.',
+      },
+    },
+  },
+}
+
 export const Email: Story = {
   args: {
     label: 'Adresse email',
