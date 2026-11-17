@@ -35,21 +35,17 @@ describe('session token storage', () => {
     expect(sessionStorage.length).toBe(0)
   })
 
-  it('allows development web reloads using only the browser session storage', async () => {
-    vi.stubEnv('DEV', true)
-    await writeAccessToken('dev-test-token')
-    expect(await readAccessToken()).toBe('dev-test-token')
-    expect(localStorage.length).toBe(0)
-    expect(SecureStorage.set).not.toHaveBeenCalled()
-    await writeAccessToken(null)
-    expect(await readAccessToken()).toBeNull()
-  })
-
-  it('skips browser persistence in production builds', async () => {
-    vi.stubEnv('DEV', false)
-    await writeAccessToken('web-test-token')
-    expect(await readAccessToken()).toBeNull()
-    expect(sessionStorage.length).toBe(0)
-    expect(SecureStorage.set).not.toHaveBeenCalled()
-  })
+  it.each([true, false])(
+    'keeps the web session in the browser session storage only (DEV=%s)',
+    async (dev) => {
+      vi.stubEnv('DEV', dev)
+      await writeAccessToken('web-test-token')
+      expect(await readAccessToken()).toBe('web-test-token')
+      expect(localStorage.length).toBe(0)
+      expect(SecureStorage.set).not.toHaveBeenCalled()
+      await writeAccessToken(null)
+      expect(await readAccessToken()).toBeNull()
+      expect(sessionStorage.length).toBe(0)
+    },
+  )
 })

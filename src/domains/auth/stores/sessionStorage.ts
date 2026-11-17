@@ -9,7 +9,9 @@ export async function readAccessToken(): Promise<string | null> {
     return typeof value === 'string' ? value : null
   }
 
-  return import.meta.env.DEV ? sessionStorage.getItem(tokenKey) : null
+  // Web build: sessionStorage keeps the session across reloads of the tab and
+  // forgets it when the tab closes. Never localStorage, which outlives the tab.
+  return sessionStorage.getItem(tokenKey)
 }
 
 export async function writeAccessToken(accessToken: string | null): Promise<void> {
@@ -28,11 +30,9 @@ export async function writeAccessToken(accessToken: string | null): Promise<void
     return
   }
 
-  if (import.meta.env.DEV) {
-    if (accessToken === null) {
-      sessionStorage.removeItem(tokenKey)
-    } else {
-      sessionStorage.setItem(tokenKey, accessToken)
-    }
+  if (accessToken === null) {
+    sessionStorage.removeItem(tokenKey)
+  } else {
+    sessionStorage.setItem(tokenKey, accessToken)
   }
 }
