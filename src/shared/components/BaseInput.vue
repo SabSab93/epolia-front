@@ -71,12 +71,27 @@
     >
       {{ stateDescription }}
     </p>
-    <p
-      v-if="help"
-      :id="`${inputId}-help`"
-      class="text-epolia-body-small break-words text-epolia-text-secondary"
-    >
-      {{ help }}
+    <div v-if="help || maxlength" class="flex flex-wrap items-start gap-x-epolia-sm">
+      <p
+        v-if="help"
+        :id="`${inputId}-help`"
+        class="min-w-0 flex-1 text-epolia-body-small break-words text-epolia-text-secondary"
+      >
+        {{ help }}
+      </p>
+      <!-- Hidden from screen readers, which would reread it on every keystroke:
+           they get the fixed limit below instead. -->
+      <p
+        v-if="maxlength"
+        data-testid="character-count"
+        aria-hidden="true"
+        class="ms-auto text-epolia-body-small text-epolia-text-secondary tabular-nums"
+      >
+        {{ model.length }} / {{ maxlength }}
+      </p>
+    </div>
+    <p v-if="maxlength" :id="`${inputId}-limit`" class="sr-only">
+      {{ maxlength }} caractères maximum.
     </p>
     <p
       v-if="error"
@@ -113,6 +128,7 @@ const props = withDefaults(
     id?: string
     type?: 'text' | 'email' | 'date' | 'textarea' | 'password'
     rows?: number
+    maxlength?: number
     name?: string
     autocomplete?: string
     placeholder?: string
@@ -130,6 +146,7 @@ const props = withDefaults(
     id: undefined,
     type: 'text',
     rows: 4,
+    maxlength: undefined,
     name: undefined,
     autocomplete: undefined,
     placeholder: undefined,
@@ -212,6 +229,7 @@ function controlAttributes() {
       : {}),
     id: inputId.value,
     name: props.name,
+    maxlength: props.maxlength,
     autocomplete: props.autocomplete,
     placeholder: props.placeholder,
     inputmode: props.inputmode,
@@ -232,6 +250,7 @@ function describedBy() {
       attrs['aria-describedby'],
       stateDescription.value ? `${inputId.value}-state` : undefined,
       props.help ? `${inputId.value}-help` : undefined,
+      props.maxlength ? `${inputId.value}-limit` : undefined,
       props.error ? `${inputId.value}-error` : undefined,
     ]
       .filter(Boolean)

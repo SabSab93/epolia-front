@@ -286,7 +286,7 @@ describe('BaseInput', () => {
     expect(textarea.attributes('maxlength')).toBe('500')
     expect(textarea.attributes('placeholder')).toBe('Votre message')
     expect(wrapper.get('label').attributes('for')).toBe('message')
-    expect(textarea.attributes('aria-describedby')).toBe('message-help message-error')
+    expect(textarea.attributes('aria-describedby')).toBe('message-help message-limit message-error')
     expect(textarea.attributes('aria-invalid')).toBe('true')
     await textarea.setValue('Bonjour,\nVoici ma demande.')
     expect(wrapper.emitted('update:modelValue')).toEqual([['Bonjour,\nVoici ma demande.']])
@@ -370,6 +370,37 @@ describe('BaseInput', () => {
     await wrapper.setData({ description: 'updated-help', invalid: true })
     expect(input.attributes('aria-describedby')).toBe('updated-help name-help')
     expect(input.attributes('aria-invalid')).toBe('true')
+  })
+
+  it('limits the field and counts its characters when a maximum length is given', async () => {
+    const wrapper = mount(BaseInput, {
+      props: {
+        modelValue: 'Bonjour',
+        type: 'textarea',
+        id: 'bio',
+        label: 'Présentation',
+        help: 'Visible sur votre profil',
+        maxlength: 350,
+      },
+    })
+    const textarea = wrapper.get('textarea')
+    const counter = wrapper.get('[data-testid="character-count"]')
+    expect(textarea.attributes('maxlength')).toBe('350')
+    expect(counter.text()).toBe('7 / 350')
+    expect(counter.attributes('aria-hidden')).toBe('true')
+    expect(wrapper.get('#bio-limit').text()).toBe('350 caractères maximum.')
+    expect(textarea.attributes('aria-describedby')).toBe('bio-help bio-limit')
+    await wrapper.setProps({ modelValue: 'Bonjour !' })
+    expect(counter.text()).toBe('9 / 350')
+  })
+
+  it('shows no counter without a maximum length', () => {
+    const wrapper = mount(BaseInput, {
+      props: { modelValue: 'Bonjour', type: 'textarea', id: 'bio', label: 'Présentation' },
+    })
+    expect(wrapper.get('textarea').attributes('maxlength')).toBeUndefined()
+    expect(wrapper.find('[data-testid="character-count"]').exists()).toBe(false)
+    expect(wrapper.find('#bio-limit').exists()).toBe(false)
   })
 })
 
