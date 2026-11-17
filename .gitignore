@@ -16,3 +16,6 @@ ios/App/build/
 *.keystore
 key.properties
 keystore.properties
+
+# Vercel CLI project link (vercel link)
+.vercel
