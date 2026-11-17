@@ -192,9 +192,10 @@ avant tout acces prive.
 Seul le jeton de session est conserve sur l'appareil. Android utilise le
 Keystore et iOS le trousseau local, via
 [le plugin Capacitor Secure Storage](https://github.com/aparajita/capacitor-secure-storage/blob/v7.1.3/README.md).
-Executer `npm run cap:sync` apres installation. Dans le navigateur, Vite en
-developpement conserve le jeton dans `sessionStorage` pour le rechargement de
-l'onglet. Un build web le garde en memoire, jusqu'au rechargement.
+Executer `npm run cap:sync` apres installation. Dans le navigateur (Vite en
+developpement comme build web de recette), le jeton est conserve dans
+`sessionStorage` : il survit au rechargement de l'onglet et disparait a sa
+fermeture. Jamais dans `localStorage`.
 
 ## Hooks Git
 
