@@ -1,11 +1,13 @@
+import { isEducationSource } from '@/domains/studies/models/types/educationSource.type'
+import { isCompleteCurrentEducation } from '@/domains/studies/models/education'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import type {
-  Campus,
-  Candidate,
-  Education,
-  EducationInput,
-  Offer,
-} from '@/domains/studies/models/education'
+  ICampusDto,
+  ICandidateDto,
+  IEducationDto,
+  IEducationInputDto,
+  IOfferDto,
+} from '@/domains/studies/models/dtos/education.dto'
 import { ApiError, apiFetch } from '@/shared/api/apiClient'
 
 const directory = '/api/education-catalog'
@@ -18,7 +20,7 @@ function record(value: unknown): value is Record<string, unknown> {
 function nullableText(value: unknown): value is string | null {
   return value === null || typeof value === 'string'
 }
-function isCampus(value: unknown): value is Campus {
+function isCampus(value: unknown): value is ICampusDto {
   return (
     record(value) &&
     typeof value.id === 'string' &&
@@ -27,7 +29,7 @@ function isCampus(value: unknown): value is Campus {
     nullableText(value.address)
   )
 }
-function isOffer(value: unknown): value is Offer {
+function isOffer(value: unknown): value is IOfferDto {
   return (
     record(value) &&
     typeof value.id === 'string' &&
@@ -39,7 +41,7 @@ function isOffer(value: unknown): value is Offer {
     nullableText(value.studyFieldId)
   )
 }
-function isCandidate(value: unknown): value is Candidate {
+function isCandidate(value: unknown): value is ICandidateDto {
   return (
     record(value) &&
     typeof value.id === 'string' &&
@@ -47,13 +49,14 @@ function isCandidate(value: unknown): value is Candidate {
     typeof value.description === 'string'
   )
 }
-function isEducation(value: unknown): value is Education {
+function isEducation(value: unknown): value is IEducationDto {
   return (
     record(value) &&
     typeof value.id === 'string' &&
     typeof value.title === 'string' &&
-    (value.source === 'CATALOG' || value.source === 'MANUAL' || value.source === 'LEGACY') &&
+    isEducationSource(value.source) &&
     nullableText(value.school) &&
+    (value.schoolAddress === undefined || nullableText(value.schoolAddress)) &&
     nullableText(value.level) &&
     nullableText(value.startDate) &&
     nullableText(value.endDate) &&
@@ -111,12 +114,17 @@ export async function listEducations(signal?: AbortSignal) {
   }
 }
 
+export async function hasSavedEducation(signal: AbortSignal) {
+  const educations = await listEducations(signal)
+  return educations.some(isCompleteCurrentEducation)
+}
+
 async function saved(response: Response) {
   const value: unknown = await response.json()
   if (!isEducation(value)) throw invalid()
   return value
 }
-export async function createEducation(input: EducationInput, key: string) {
+export async function createEducation(input: IEducationInputDto, key: string) {
   const auth = useAuthStore()
   const owner = auth.user?.id
   const options = {
@@ -147,7 +155,7 @@ export async function createEducation(input: EducationInput, key: string) {
   if (auth.user?.id !== owner) throw new DOMException('Session changed', 'AbortError')
   return saved(await auth.authenticatedFetch(educationPath, options))
 }
-export async function updateEducation(id: string, input: EducationInput) {
+export async function updateEducation(id: string, input: IEducationInputDto) {
   return saved(
     await useAuthStore().authenticatedFetch(`/api/student-educations/${encodeURIComponent(id)}`, {
       method: 'PATCH',

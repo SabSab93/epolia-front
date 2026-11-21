@@ -6,6 +6,7 @@ import App from '@/App.vue'
 import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import { readAccessToken, writeAccessToken } from '@/domains/auth/stores/sessionStorage'
+import { studentSteps } from '@/domains/onboarding/studentSteps'
 import { createAppRouter } from '@/router'
 import { deferred } from '@/tests/deferred'
 
@@ -235,9 +236,12 @@ describe('adding a role to the current account', () => {
     vi.mocked(readAccessToken).mockResolvedValue('stored-token')
     const user = { id: 'user-id', email: null, emailVerified: true, roles: [currentRole] }
     const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (url) => {
-      if (new URL(String(url)).pathname === '/api/auth/roles') {
+      const path = new URL(String(url)).pathname
+      if (path === '/api/student-educations/me') return Response.json([])
+      if (path === '/api/auth/roles') {
+        user.roles = [currentRole, newRole]
         return Response.json({
-          user: { ...user, roles: [currentRole, newRole], status: 'ACTIVE' },
+          user: { ...user, status: 'ACTIVE' },
           accessToken: 'updated-token',
         })
       }
@@ -251,11 +255,17 @@ describe('adding a role to the current account', () => {
     await vi.waitFor(() => expect(wrapper.find(trigger).exists()).toBe(true))
 
     await wrapper.get(trigger).trigger('click')
-    const action = document.body.querySelector<HTMLButtonElement>(
-      '[role="dialog"][aria-label="Options du compte"] button',
-    )!
-    expect(action.textContent?.trim()).toBe(`M’inscrire comme ${label}`)
-    action.click()
+    const menu = document.body.querySelector('[role="dialog"][aria-label="Options du compte"]')!
+    const action = Array.from(menu.querySelectorAll('a')).find(
+      (link) => link.textContent?.trim() === `M’inscrire comme ${label}`,
+    )
+    expect(menu.textContent?.includes('Mon parcours étudiant')).toBe(
+      currentRole === AccountRoleEnum.Student,
+    )
+    expect(menu.textContent?.includes('Refaire le parcours étudiant (dev)')).toBe(
+      currentRole === AccountRoleEnum.Student,
+    )
+    action!.click()
 
     await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe(`Inscription comme ${label}`))
     expect(wrapper.find('input').exists()).toBe(false)
@@ -280,6 +290,75 @@ describe('adding a role to the current account', () => {
     expect(request?.method).toBe('POST')
     expect(new Headers(request?.headers).get('Authorization')).toBe('Bearer stored-token')
     expect(JSON.parse(String(request?.body))).toEqual({ role: newRole })
+
+    const onboarding = wrapper
+      .findAll('button')
+      .find((item) => item.text() === 'Compléter mon profil étudiant')
+    if (newRole === AccountRoleEnum.Student) {
+      await onboarding!.trigger('click')
+      await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe(studentSteps[0].title))
+    } else {
+      expect(onboarding).toBeUndefined()
+    }
+  })
+
+  it('reopens onboarding and email verification from the menu for a returning dual-role student', async () => {
+    vi.mocked(readAccessToken).mockResolvedValue('stored-token')
+    const user = {
+      id: 'dual-role',
+      email: 'student@example.test',
+      emailVerified: false,
+      roles: [AccountRoleEnum.Student, AccountRoleEnum.Customer],
+    }
+    const education = {
+      id: 'saved',
+      source: 'MANUAL',
+      school: 'École enregistrée',
+      title: 'Formation enregistrée',
+      level: null,
+      startDate: '2025-09-01',
+      endDate: null,
+      catalogCampusId: null,
+      catalogOfferId: null,
+      studyFieldId: null,
+    }
+    const fetchMock = vi.fn<typeof fetch>(async (url) =>
+      Response.json(
+        new URL(String(url)).pathname === '/api/student-educations/me' ? [education] : user,
+      ),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const { pinia, router } = setup()
+    await router.push('/')
+    const wrapper = mount(App, { attachTo: document.body, global: { plugins: [pinia, router] } })
+    const trigger = 'header button[aria-label="Options du compte"]'
+    await vi.waitFor(() => expect(wrapper.find(trigger).exists()).toBe(true))
+
+    async function openMenuLink(label: string) {
+      await wrapper.get(trigger).trigger('click')
+      const links = document.body.querySelectorAll<HTMLAnchorElement>(
+        '[role="dialog"][aria-label="Options du compte"] a',
+      )
+      const link = Array.from(links).find((item) => item.textContent?.trim() === label)
+      expect(link).toBeDefined()
+      link!.click()
+    }
+
+    await openMenuLink('Mon parcours étudiant')
+    await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe(studentSteps[0].title))
+    await router.push('/')
+    await openMenuLink('Refaire le parcours étudiant (dev)')
+    await vi.waitFor(() => expect(wrapper.find('form').exists()).toBe(true))
+    expect(router.currentRoute.value.name).toBe('student-' + studentSteps[0].id)
+    expect(wrapper.get<HTMLInputElement>('input[role="combobox"]').element.value).toBe('')
+    expect(wrapper.get('[aria-current="step"]').text()).not.toContain('Terminée')
+    expect(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(true)
+    expect(fetchMock.mock.calls.every(([, init]) => !init?.method || init.method === 'GET')).toBe(
+      true,
+    )
+    await router.push('/')
+    await openMenuLink('Confirmer mon adresse e-mail')
+    await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('email-verification'))
   })
 
   it('protects a direct link to role registration', async () => {

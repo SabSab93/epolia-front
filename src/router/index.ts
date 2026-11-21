@@ -1,6 +1,11 @@
 import type { Pinia } from 'pinia'
 import { createRouter, type RouterHistory } from 'vue-router'
 import HomeView from '@/HomeView.vue'
+import {
+  studentSteps,
+  stepDestination,
+  firstStudentStepDestination,
+} from '@/domains/onboarding/studentSteps'
 import { parseAccountRole } from '@/domains/auth/accountRole'
 import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
@@ -8,6 +13,8 @@ import { useAuthStore } from '@/domains/auth/stores/authStore'
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
+    studentOnly?: boolean
+    studentStep?: string
   }
 }
 
@@ -40,11 +47,24 @@ export function createAppRouter(history: RouterHistory, pinia?: Pinia) {
         component: () => import('@/domains/auth/views/AdditionalRoleRegistration.vue'),
       },
       {
-        path: '/compte/etudes',
-        name: 'student-studies',
-        meta: { title: 'Vos études', requiresAuth: true },
-        component: () => import('@/domains/studies/views/StudentStudies.vue'),
+        path: '/compte/parcours-etudiant',
+        component: () => import('@/domains/onboarding/views/StudentOnboarding.vue'),
+        meta: { requiresAuth: true, studentOnly: true },
+        children: [
+          {
+            path: '',
+            name: 'student-onboarding',
+            redirect: firstStudentStepDestination,
+          },
+          ...studentSteps.map((step) => ({
+            path: step.id,
+            ...stepDestination(step.id),
+            meta: { title: step.title, studentStep: step.id },
+            component: step.component,
+          })),
+        ],
       },
+      { path: '/compte/etudes', redirect: { name: 'student-studies' } },
       {
         path: '/connexion',
         name: 'login',
@@ -71,7 +91,7 @@ export function createAppRouter(history: RouterHistory, pinia?: Pinia) {
       const auth = useAuthStore(pinia)
       await auth.restore()
       if (!auth.isAuthenticated) return { name: 'login', replace: true }
-      if (to.name === 'student-studies' && !auth.user?.roles.includes(AccountRoleEnum.Student)) {
+      if (to.meta.studentOnly && !auth.user?.roles.includes(AccountRoleEnum.Student)) {
         return { name: 'home', replace: true }
       }
     }

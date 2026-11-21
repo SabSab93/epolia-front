@@ -1,6 +1,6 @@
 <template>
-  <header v-if="availableRole" class="w-full max-w-md text-end">
-    <AccountMenu :role="availableRole" />
+  <header v-if="links.length" class="w-full max-w-md text-end">
+    <AccountMenu :links="links" />
   </header>
 </template>
 
@@ -8,5 +8,5 @@
 import { useAppHeader } from '@/composables/useAppHeader'
 import AccountMenu from '@/domains/auth/components/AccountMenu.vue'
 
-const { availableRole } = useAppHeader()
+const { links } = useAppHeader()
 </script>

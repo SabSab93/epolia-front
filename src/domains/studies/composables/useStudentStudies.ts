@@ -1,21 +1,17 @@
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { onBeforeRouteLeave } from 'vue-router'
+import { isCompleteCurrentEducation } from '@/domains/studies/models/education'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { isStudentReplay } from '@/domains/onboarding/studentSteps'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute } from 'vue-router'
 import { getCampusOffers, listEducations } from '@/domains/studies/api/studiesApi'
-import type { Education } from '@/domains/studies/models/education'
+import type { IEducationDto } from '@/domains/studies/models/dtos/education.dto'
 
-const steps = [
-  { id: 'studies', label: 'Études' },
-  { id: 'services', label: 'Domaine et prestations' },
-  { id: 'pricing', label: 'Tarifs' },
-  { id: 'presentation', label: 'Présentation' },
-  { id: 'travel', label: 'Rayon de déplacement' },
-  { id: 'availability', label: 'Disponibilités' },
-  { id: 'portfolio', label: 'Portfolio' },
-  { id: 'document', label: 'Justificatif scolaire' },
-]
-
-export function useStudentStudies() {
-  const records = ref<Education[]>([])
+export function useStudentStudies(emit: {
+  (event: 'saved'): void
+  (event: 'restored', saved: boolean): void
+}) {
+  const route = useRoute()
+  const replay = computed(() => isStudentReplay(route.query))
+  const records = ref<IEducationDto[]>([])
   const page = ref<'loading' | 'error' | 'list' | 'form' | 'saved'>('loading')
   const selectedId = ref('')
   const current = computed(() => records.value.find((record) => record.id === selectedId.value))
@@ -25,15 +21,19 @@ export function useStudentStudies() {
   const intro = useTemplateRef<HTMLElement>('intro')
   const recordsPanel = useTemplateRef<HTMLElement>('recordsPanel')
   const savedPanel = useTemplateRef<HTMLElement>('savedPanel')
-  watch(page, async (screen) => {
-    await nextTick()
-    const panel = screen === 'list' ? recordsPanel : screen === 'saved' ? savedPanel : intro
-    panel.value?.focus()
-  })
+  watch(
+    page,
+    (screen, previous) => {
+      if (previous === 'loading') return
+      const panel = screen === 'list' ? recordsPanel : screen === 'saved' ? savedPanel : intro
+      panel.value?.focus()
+    },
+    { flush: 'post' },
+  )
   const offerDetails = ref<Record<string, string>>({})
   const checkedCampuses = new Set<string>()
   const detailsRequest = new AbortController()
-  function loadOfferDetail(record?: Education) {
+  function loadOfferDetail(record?: IEducationDto) {
     const id = record?.catalogCampusId
     if (!id || checkedCampuses.has(id)) return
     checkedCampuses.add(id)
@@ -46,7 +46,7 @@ export function useStudentStudies() {
       })
       .catch(() => checkedCampuses.delete(id))
   }
-  function recordReference(record: Education) {
+  function recordReference(record: IEducationDto) {
     const ids = record.catalogOfferId
     const homonyms = records.value.filter(
       (other) =>
@@ -78,12 +78,15 @@ export function useStudentStudies() {
     )
   }
   onBeforeRouteLeave(canLeave)
+  onBeforeRouteUpdate(
+    (to, from) => isStudentReplay(to.query) === isStudentReplay(from.query) || canLeave(),
+  )
   function edit(id = '') {
     if (!canLeave()) return
     dirty.value = false
     selectedId.value = id
     page.value = 'form'
-    loadOfferDetail(current.value)
+    if (current.value?.source !== 'CATALOG') loadOfferDetail(current.value)
   }
   function chooseRecord() {
     if (!canLeave()) return
@@ -101,7 +104,7 @@ export function useStudentStudies() {
         loadOfferDetail(record)
     }
   }
-  function onSaved(record: Education) {
+  function onSaved(record: IEducationDto) {
     busy.value = false
     dirty.value = false
     const index = records.value.findIndex((item) => item.id === record.id)
@@ -109,6 +112,7 @@ export function useStudentStudies() {
     else records.value[index] = record
     selectedId.value = record.id
     page.value = 'saved'
+    emit('saved')
   }
   async function load() {
     request?.abort()
@@ -119,7 +123,9 @@ export function useStudentStudies() {
       const result = await listEducations(controller.signal)
       if (controller.signal.aborted) return
       records.value = result
-      if (result.length > 1) chooseRecord()
+      emit('restored', !replay.value && result.some(isCompleteCurrentEducation))
+      if (replay.value) edit()
+      else if (result.length > 1) chooseRecord()
       else edit(result[0]?.id)
     } catch {
       if (!controller.signal.aborted) page.value = 'error'
@@ -130,7 +136,7 @@ export function useStudentStudies() {
     request?.abort()
     detailsRequest.abort()
   })
-  function recordPeriod(record: Education) {
+  function recordPeriod(record: IEducationDto) {
     const format = (date: string) => date.split('-').reverse().join('/')
     return [
       record.startDate && 'Début le ' + format(record.startDate),
@@ -139,11 +145,25 @@ export function useStudentStudies() {
       .filter(Boolean)
       .join(' · ')
   }
+  const recordOptions = computed(() =>
+    records.value.map((record) => ({
+      value: record.id,
+      label: [
+        record.title,
+        record.school,
+        record.level,
+        recordPeriod(record),
+        offerDetails.value[record.catalogOfferId ?? ''],
+        recordReference(record),
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    })),
+  )
   return {
-    recordPeriod,
+    recordOptions,
     recordReference,
     offerDetails,
-    steps,
     records,
     page,
     current,

@@ -1,6 +1,8 @@
 import { computed, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
+import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
+import { firstStudentStepDestination } from '@/domains/onboarding/studentSteps'
 import { ApiError } from '@/shared/api/apiClient'
 
 export function useLoginForm() {
@@ -87,8 +89,8 @@ export function useLoginForm() {
     if (departures !== departure || router.currentRoute.value !== origin || !auth.isAuthenticated)
       return
 
-    // An unconfirmed address comes first: the code screen is the only place to confirm it.
-    if (auth.user?.emailVerified === false) {
+    const student = auth.user?.roles.includes(AccountRoleEnum.Student)
+    if (!student && auth.user?.emailVerified === false) {
       await router.replace({ name: 'email-verification' })
       return
     }
@@ -99,7 +101,7 @@ export function useLoginForm() {
       return
     }
 
-    await router.replace({ name: 'home' })
+    await router.replace(student ? firstStudentStepDestination() : { name: 'home' })
   }
 
   return {
