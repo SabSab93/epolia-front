@@ -1,21 +1,7 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ListboxRoot } from 'reka-ui'
 import BaseMultiSelect from '@/shared/components/BaseMultiSelect.vue'
-
-// jsdom has no layout/scrolling; real popup scrolling is verified in Storybook.
-const scrollDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView')
-beforeAll(() =>
-  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
-    configurable: true,
-    value: vi.fn(),
-  }),
-)
-afterAll(() => {
-  if (scrollDescriptor)
-    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', scrollDescriptor)
-  else Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView')
-})
 
 const options = [
   { value: 'design', label: 'Design graphique' },
