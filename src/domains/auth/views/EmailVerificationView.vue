@@ -81,6 +81,12 @@
         announcement="polite"
       />
       <BaseAlert message="Pensez à regarder dans vos courriers indésirables." />
+      <BaseButton
+        v-if="auth.user?.roles.includes(AccountRoleEnum.Student)"
+        label="Compléter mes études en attendant"
+        variant="tertiary"
+        @click="router.push({ name: 'student-studies' })"
+      />
       <BaseAlert
         v-if="auth.persistenceFailed"
         message="Votre session est active pour cette utilisation. Elle n’a pas pu être enregistrée sur cet appareil."
@@ -96,6 +102,7 @@ import { useRouter } from 'vue-router'
 import IconMail from '~icons/material-symbols/mail'
 import AuthLayout from '@/domains/auth/components/AuthLayout.vue'
 import { useEmailVerification } from '@/domains/auth/composables/useEmailVerification'
+import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseCodeInput from '@/shared/components/BaseCodeInput.vue'
@@ -141,7 +148,10 @@ watch(codeError, async (message) => {
 watch(
   verified,
   (isVerified) => {
-    if (isVerified) router.replace({ name: 'home' })
+    if (isVerified) {
+      const student = auth.user?.roles.includes(AccountRoleEnum.Student)
+      router.replace({ name: student ? 'student-studies' : 'home' })
+    }
   },
   { immediate: true },
 )

@@ -1,10 +1,12 @@
 import { computed, nextTick, ref, useTemplateRef } from 'vue'
+import { useRouter } from 'vue-router'
 import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import { ApiError } from '@/shared/api/apiClient'
 
 export function useAdditionalRoleRegistration(getRole: () => AccountRoleEnum) {
   const auth = useAuthStore()
+  const router = useRouter()
   const isStudent = computed(() => getRole() === AccountRoleEnum.Student)
   const title = computed(() =>
     isStudent.value ? 'Inscription comme étudiant' : 'Inscription comme particulier',
@@ -47,6 +49,8 @@ export function useAdditionalRoleRegistration(getRole: () => AccountRoleEnum) {
   }
 
   return {
+    isStudent,
+    openStudies: () => router.push({ name: 'student-studies' }),
     title,
     description,
     hasRole,
