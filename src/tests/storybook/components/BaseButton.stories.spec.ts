@@ -5,7 +5,7 @@ import meta, {
   DangerLongLabel,
   IconLoading,
   IconLongLabel,
-} from '@/shared/components/BaseButton.stories'
+} from '@/shared/components/stories/BaseButton.stories'
 import BaseIcon from '@/shared/components/BaseIcon.vue'
 import BaseLoader from '@/shared/components/BaseLoader.vue'
 

@@ -1,7 +1,7 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, expect, it } from 'vitest'
 import { reactive } from 'vue'
-import meta, { LongLabel, type TagStoryArgs } from '@/shared/components/BaseTag.stories'
+import meta, { LongLabel, type TagStoryArgs } from '@/shared/components/stories/BaseTag.stories'
 
 enableAutoUnmount(afterEach)
 

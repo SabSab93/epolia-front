@@ -1,8 +1,8 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, reactive } from 'vue'
-import meta, { type CodeInputStoryArgs } from '@/shared/components/BaseCodeInput.stories'
-import * as stories from '@/shared/components/BaseCodeInput.stories'
+import meta, { type CodeInputStoryArgs } from '@/shared/components/stories/BaseCodeInput.stories'
+import * as stories from '@/shared/components/stories/BaseCodeInput.stories'
 
 const useArgsMock = vi.hoisted(() => vi.fn())
 vi.mock('storybook/preview-api', () => ({ useArgs: useArgsMock }))

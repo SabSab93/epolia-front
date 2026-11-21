@@ -169,7 +169,7 @@ import {
   ListboxItemIndicator,
 } from 'reka-ui'
 import BaseTag from '@/shared/components/BaseTag.vue'
-import type { SelectOption } from '@/shared/components/BaseSelect.vue'
+import type { SelectOption } from '@/shared/models/types/selectOption.type'
 
 defineOptions({ inheritAttrs: false })
 const props = withDefaults(

@@ -2,7 +2,7 @@ import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, expect, it } from 'vitest'
 import { nextTick, reactive } from 'vue'
 import BaseAvatar from '@/shared/components/BaseAvatar.vue'
-import meta, { Identity } from '@/shared/components/BaseAvatar.stories'
+import meta, { Identity } from '@/shared/components/stories/BaseAvatar.stories'
 
 enableAutoUnmount(afterEach)
 

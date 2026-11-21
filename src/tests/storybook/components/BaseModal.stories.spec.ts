@@ -6,7 +6,7 @@ import meta, {
   LongContent,
   WarningConfirmation,
   WithForm,
-} from '@/shared/components/BaseModal.stories'
+} from '@/shared/components/stories/BaseModal.stories'
 
 enableAutoUnmount(afterEach)
 

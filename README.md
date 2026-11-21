@@ -124,19 +124,19 @@ dans `.env.example`.
 
 ```txt
 src/
-  shared/
-    api/
-      apiClient.ts
-      apiClient.spec.ts
-    components/
-      BaseButton.vue
-      BaseButton.stories.ts
-  router/        Routes Vue Router
-  assets/        Styles globaux minimaux
-  tests/         Setup de tests
+  domains/auth/                 Parcours, API et modèles d’authentification
+  shared/api/                   Client HTTP commun
+  shared/components/            Composants Vue partagés
+    stories/                    Exemples Storybook de ces composants
+  shared/models/types/          Types utilisés par plusieurs composants
+  router/                       Routes Vue Router
+  assets/                       Styles, polices et images
+  tests/                        Préparation et suites Vitest
+    domains/auth/               Suites des vues et du store
+    shared/components/          Tests de comportement des composants
+    storybook/components/       Tests des exemples Storybook
+  HomeView.vue
   App.vue
-  HomeView.vue    Ecran technique d'initialisation
-  HomeView.spec.ts
   main.ts
 ```
 
@@ -164,7 +164,22 @@ Dans chaque domaine, creer uniquement les dossiers necessaires :
 
 `shared/` accueille uniquement le code transversal ou clairement destine a
 plusieurs domaines. Les composants specifiques restent dans leur domaine.
-Les stories et les tests sont places a cote du code concerne.
+
+## Tests et modèles
+
+Pour tester une fonctionnalité, reprendre son chemin sous `src/tests/`. Par exemple,
+`domains/auth/stores/authStore.ts` a sa suite dans `tests/domains/auth/stores/authStore.spec.ts`.
+Pour un composant partagé, ranger sa story dans `shared/components/stories/` et les tests
+de cette story dans `tests/storybook/components/`. Les tests de son comportement restent
+dans `tests/shared/components/`. Tous ces chemins partent de `src/`.
+
+Un DTO décrit les données envoyées ou reçues par l’API, comme `LoginInputDto`.
+Valider le JSON reçu avant de l’utiliser. Un type décrit une donnée manipulée dans
+l’application, comme l’état de session. Un enum fournit des valeurs nommées utilisées
+dans le code, comme les rôles proposés à l’inscription. Réutiliser les modèles existants
+et garder un type propre à un seul composant près de ses props.
+
+## Appels API
 
 Le client `apiFetch(path, options)` centralise l'URL de base, `fetch`, les headers
 et les erreurs HTTP. Il renvoie une `Response`, y compris pour les reponses sans

@@ -135,8 +135,8 @@ Installer avec `npm ci`, puis ajouter uniquement le composant nécessaire :
 npx shadcn-vue@2.8.2 add input
 ```
 
-Relire le code généré et le lockfile ; conserver les imports `@/`, les stories
-et tests à côté du composant, sans doublon. Adapter ses classes de couleur aux
+Relire le code généré et le lockfile. Utiliser les imports `@/` et suivre le
+[classement des stories et des tests](../README.md#tests-et-modèles). Adapter les classes de couleur aux
 noms `epolia-` et ses espacements à notre échelle. Personnaliser les tokens plutôt
 que disperser les couleurs. La palette reste provisoire, sans mode sombre validé.
 Les fichiers Inter et Bricolage Grotesque sont embarqués localement. Répartition

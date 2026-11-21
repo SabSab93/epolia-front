@@ -1,7 +1,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, expect, it } from 'vitest'
 import { nextTick, reactive } from 'vue'
-import meta, { LongContent, type CardStoryArgs } from '@/shared/components/BaseCard.stories'
+import meta, { LongContent, type CardStoryArgs } from '@/shared/components/stories/BaseCard.stories'
 
 enableAutoUnmount(afterEach)
 

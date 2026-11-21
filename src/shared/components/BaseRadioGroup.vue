@@ -76,14 +76,12 @@
 
 <script setup lang="ts">
 import { computed, useAttrs, useId } from 'vue'
+import type { SelectOption } from '@/shared/models/types/selectOption.type'
 
 defineOptions({ inheritAttrs: false })
 
-export interface RadioOption {
-  value: string
-  label: string
+export interface RadioOption extends SelectOption {
   description?: string
-  disabled?: boolean
 }
 
 const props = defineProps<{

@@ -1,2 +1,3 @@
-export type SessionStatusType =
-  'idle' | 'anonymous' | 'authenticated' | 'expired' | 'forbidden' | 'unavailable'
+import type { SessionClearReasonType } from '@/domains/auth/models/types/sessionClearReason.type'
+
+export type SessionStatusType = SessionClearReasonType | 'idle' | 'authenticated' | 'unavailable'

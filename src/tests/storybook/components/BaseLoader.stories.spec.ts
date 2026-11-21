@@ -1,7 +1,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { reactive } from 'vue'
-import meta, { InControl } from '@/shared/components/BaseLoader.stories'
+import meta, { InControl } from '@/shared/components/stories/BaseLoader.stories'
 import BaseLoader from '@/shared/components/BaseLoader.vue'
 
 enableAutoUnmount(afterEach)
