@@ -15,6 +15,8 @@
         <span class="text-center text-epolia-body font-semibold">Votre profil</span>
       </header>
       <BaseStepper
+        class="text-center"
+        :summary="stepCounter"
         :steps="progress"
         :status-labels="statusLabels"
         :current-step-id="active.id"
@@ -42,6 +44,15 @@ import { useStudentOnboarding } from '@/domains/onboarding/composables/useStuden
 import BaseStepper from '@/shared/components/BaseStepper.vue'
 import BaseTitle from '@/shared/components/BaseTitle.vue'
 
-const { active, replay, backTo, backLabel, progress, statusLabels, restoreStep, advanceAfterSave } =
-  useStudentOnboarding()
+const {
+  active,
+  replay,
+  backTo,
+  backLabel,
+  stepCounter,
+  progress,
+  statusLabels,
+  restoreStep,
+  advanceAfterSave,
+} = useStudentOnboarding()
 </script>

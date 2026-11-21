@@ -74,6 +74,7 @@ export function useStudentOnboarding() {
     replay,
     backTo,
     backLabel,
+    stepCounter: computed(() => `${index.value + 1}/${studentSteps.length}`),
     progress,
     statusLabels,
     restoreStep,

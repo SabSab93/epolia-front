@@ -74,7 +74,7 @@ it('keeps keyboard focus when a slow studies request finishes and advances only 
   save.resolve(Response.json(updated))
   await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe('Étape de test'))
   expect(document.activeElement).toBe(wrapper.get('h1').element)
-  expect(wrapper.text()).toContain('Étape 2 sur 2')
+  expect(wrapper.get('[role="group"] [aria-live="polite"]').text()).toBe('2/2')
   expect(requests).toHaveBeenCalledTimes(2)
   requests.mockResolvedValueOnce(Response.json([updated]))
   await wrapper.get('header a').trigger('click')
