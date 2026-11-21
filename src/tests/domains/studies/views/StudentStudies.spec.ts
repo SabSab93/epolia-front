@@ -4,18 +4,21 @@ import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import StudentStudies from '@/domains/studies/views/StudentStudies.vue'
 import BaseSelect from '@/shared/components/BaseSelect.vue'
-import type { Campus, Education, Offer, Candidate } from '@/domains/studies/models/education'
+import type {
+  ICampusDto,
+  IEducationDto,
+  IOfferDto,
+} from '@/domains/studies/models/dtos/education.dto'
 import * as api from '@/domains/studies/api/studiesApi'
-import { deferred } from '@/tests/deferred'
 
 vi.mock('@/domains/studies/api/studiesApi')
-const campus: Campus = {
+const campus: ICampusDto = {
   id: 'ens',
   label: 'My Digital School Grenoble',
   city: 'Saint-Martin-d’Hères',
   address: '22 rue Galilée',
 }
-const mba: Offer = {
+const mba: IOfferDto = {
   id: 'mba',
   campusId: campus.id,
   campusLabel: campus.label,
@@ -24,7 +27,7 @@ const mba: Offer = {
   level: 'Bac + 5',
   studyFieldId: null,
 }
-const stored: Education = {
+const stored: IEducationDto = {
   id: 'first',
   title: mba.label,
   school: campus.label,
@@ -38,12 +41,17 @@ const stored: Education = {
 }
 let wrapper: VueWrapper
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-11-21T12:00:00Z'))
   vi.resetAllMocks()
+  vi.mocked(api.searchCampuses).mockResolvedValue([])
   vi.mocked(api.listEducations).mockResolvedValue([])
   vi.mocked(api.getCampusOffers).mockResolvedValue([mba])
-  vi.mocked(api.getOfferCandidates).mockResolvedValue([])
 })
-afterEach(() => wrapper?.unmount())
+afterEach(() => {
+  wrapper?.unmount()
+  vi.useRealTimers()
+})
 async function open() {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -62,48 +70,121 @@ function button(text: string) {
   if (!target) throw new Error('Bouton absent : ' + text)
   return target
 }
-async function searchAndSelect(selected: Campus = campus) {
+async function searchAndSelect(selected: ICampusDto = campus) {
   vi.mocked(api.searchCampuses).mockResolvedValue([selected])
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   try {
-    await wrapper.get('input[autocomplete="off"]').setValue('My Digital')
+    const field = wrapper.get('input[autocomplete="off"]')
+    await field.setValue('My Digital')
+    expect(field.attributes('aria-describedby')).toBeUndefined()
     await vi.advanceTimersByTimeAsync(220)
   } finally {
     vi.useRealTimers()
   }
   await flushPromises()
   expect(wrapper.text()).toContain(selected.address)
-  await button(selected.label).trigger('click')
+  await wrapper.get('[role="option"]').trigger('click')
   await flushPromises()
 }
-async function chooseOffer(id: string) {
+async function chooseOption(id: string) {
   wrapper.getComponent(BaseSelect).vm.$emit('update:modelValue', id)
   await nextTick()
 }
-it('shows campus address, offer details and candidates before saving the chosen offer', async () => {
-  vi.mocked(api.getOfferCandidates).mockResolvedValue([
-    {
-      id: 'candidate',
-      label: 'Aide numérique à domicile',
-      description: 'Accompagnement du particulier.',
-    },
-  ])
-  vi.mocked(api.createEducation).mockResolvedValue(stored)
+it('saves the chosen offer without loading or displaying services', async () => {
+  vi.mocked(api.createEducation).mockResolvedValue({ ...stored, startDate: '2026-06-10' })
   await open()
+  const save = wrapper.get<HTMLButtonElement>('button[type="submit"]')
+  expect(save.element.disabled).toBe(true)
+  const schoolField = wrapper.get('input[role="combobox"]')
+  const info = wrapper.get('p[id="' + schoolField.attributes('aria-describedby') + '"]')
+  expect(info.text()).toBe('Saisissez au moins deux caractères.')
+  expect(info.element.closest('[role="listbox"]')).toBeNull()
+  expect(
+    wrapper.getComponent(BaseSelect).get('[role="combobox"]').attributes('disabled'),
+  ).toBeDefined()
   await searchAndSelect()
+  expect(save.element.disabled).toBe(true)
   expect(wrapper.getComponent(BaseSelect).props('options')[0]?.label).toContain(mba.detail)
-  await chooseOffer(mba.id)
+  await chooseOption(mba.id)
   await flushPromises()
-  expect(wrapper.text()).toContain('Aide numérique à domicile')
+  expect(api.getOfferCandidates).not.toHaveBeenCalled()
+  expect(wrapper.text()).not.toContain('Prestations à l’étude')
+  const start = wrapper.get('input[type="date"][required]')
+  await wrapper.get('form').trigger('submit')
+  expect(api.createEducation).not.toHaveBeenCalled()
+  expect(start.attributes('aria-invalid')).toBe('true')
+  expect(document.activeElement).toBe(start.element)
+  await start.setValue('2026-06-10')
+  await wrapper.get('input[type="radio"][value="2027"]').setValue()
+  expect(wrapper.get<HTMLInputElement>('input[type="date"][min]').element.value).toBe('')
+  expect(start.attributes('aria-invalid')).toBeUndefined()
+  expect(save.element.disabled).toBe(false)
   await wrapper.get('form').trigger('submit')
   await flushPromises()
   expect(api.createEducation).toHaveBeenCalledWith(
-    { catalogOfferId: mba.id, startDate: null, endDate: null },
+    { catalogOfferId: mba.id, startDate: '2026-06-10', endDate: null },
     expect.any(String),
   )
   expect(api.updateEducation).not.toHaveBeenCalled()
   expect(wrapper.text()).toContain('Formation enregistrée')
 })
+it('guides students back to the school list if they close it without choosing a campus', async () => {
+  vi.mocked(api.searchCampuses).mockResolvedValue([campus])
+  await open()
+  const field = wrapper.get('input[role="combobox"]')
+  await field.setValue('Grenoble')
+  await vi.waitFor(() => expect(wrapper.find('[role="option"]').exists()).toBe(true))
+  await field.trigger('keydown', { key: 'Escape' })
+  await vi.waitFor(() => expect(field.attributes('aria-expanded')).toBe('false'))
+  const hint = wrapper.get('[id="' + field.attributes('aria-describedby') + '"]')
+  expect(hint.text()).toBe('Sélectionnez un établissement dans la liste.')
+  expect(api.getCampusOffers).not.toHaveBeenCalled()
+})
+
+it('restores the address of the saved campus by ID and keeps its name in the field', async () => {
+  vi.mocked(api.listEducations).mockResolvedValue([stored])
+  vi.mocked(api.searchCampuses).mockResolvedValue([
+    { ...campus, id: 'homonym', address: 'Autre adresse' },
+    campus,
+  ])
+  await open()
+  const input = wrapper.get<HTMLInputElement>('input[role="combobox"]')
+  await vi.waitFor(() =>
+    expect(wrapper.get('p[id="' + input.attributes('aria-describedby') + '"]').text()).toBe(
+      campus.address + ' ' + campus.city,
+    ),
+  )
+  expect(input.element.value).toBe(campus.label)
+  expect(wrapper.find('details').exists()).toBe(false)
+})
+
+it('offers the full school name only when the selected name overflows the input', async () => {
+  await open()
+  const input = wrapper.get<HTMLInputElement>('input[role="combobox"]')
+  Object.defineProperty(input.element, 'clientWidth', { value: 240 })
+  Object.defineProperty(input.element, 'scrollWidth', {
+    get: () => (input.element.value === campus.label ? 320 : 240),
+  })
+  await searchAndSelect()
+  expect(input.element.value).toBe(campus.label)
+  expect(wrapper.get('details summary').text()).toContain('Voir le nom complet')
+  expect(wrapper.get('details p').text()).toBe(campus.label)
+  await searchAndSelect({ ...campus, id: 'short', label: 'MDS' })
+  expect(input.element.value).toBe('MDS')
+  expect(wrapper.find('details').exists()).toBe(false)
+})
+
+it('clears the previous course when the school search changes', async () => {
+  await open()
+  await searchAndSelect()
+  await chooseOption(mba.id)
+  await flushPromises()
+  await wrapper.get('input[role="combobox"]').setValue('Autre école')
+  expect(wrapper.getComponent(BaseSelect).props('modelValue')).toBe('')
+  await wrapper.get('form').trigger('submit')
+  expect(api.createEducation).not.toHaveBeenCalled()
+})
+
 it('requires an explicit choice among existing records and preserves an older unlinked declaration', async () => {
   const old = {
     ...stored,
@@ -118,45 +199,23 @@ it('requires an explicit choice among existing records and preserves an older un
   vi.mocked(api.updateEducation).mockResolvedValue({ ...old, endDate: '2028-06-01' })
   await open()
   expect(wrapper.find('form').exists()).toBe(false)
-  await button(old.title).trigger('click')
+  await chooseOption(old.id)
   expect(api.getOfferCandidates).not.toHaveBeenCalled()
   expect(wrapper.text()).not.toContain('Réf.')
+  await wrapper.get('input[type="date"][required]').setValue('2026-09-01')
   await wrapper.findAll('input[type="date"]')[1]!.setValue('2028-06-01')
   await wrapper.get('form').trigger('submit')
   await flushPromises()
   expect(api.updateEducation).toHaveBeenCalledWith('old', {
-    startDate: null,
+    startDate: '2026-09-01',
     endDate: '2028-06-01',
   })
-})
-it('ignores obsolete previews when the selected program changes; a failure is distinct from an empty response', async () => {
-  const stale = deferred<Candidate[]>()
-  vi.mocked(api.getCampusOffers).mockResolvedValue([
-    mba,
-    { ...mba, id: 'other', label: 'Autre formation' },
-  ])
-  vi.mocked(api.getOfferCandidates)
-    .mockReturnValueOnce(stale.promise)
-    .mockRejectedValueOnce(new Error('notice'))
-    .mockResolvedValueOnce([])
-  await open()
-  await searchAndSelect()
-  await chooseOffer(mba.id)
-  await chooseOffer('other')
-  await flushPromises()
-  stale.resolve([{ id: 'obsolete', label: 'RÉSULTAT OBSOLÈTE', description: '' }])
-  await flushPromises()
-  expect(wrapper.text()).not.toContain('RÉSULTAT OBSOLÈTE')
-  expect(wrapper.text()).toContain('L’aperçu des prestations est indisponible')
-  await button('Recharger les prestations').trigger('click')
-  await flushPromises()
-  expect(wrapper.text()).toContain('Aucune prestation associée')
 })
 it('validates actual dates and reuses the same creation key after a lost manual-save response', async () => {
   const manual = {
     ...stored,
     title: 'Formation libre',
-    school: null,
+    school: 'Mon établissement',
     level: null,
     source: 'MANUAL' as const,
     catalogCampusId: null,
@@ -169,10 +228,19 @@ it('validates actual dates and reuses the same creation key after a lost manual-
     .mockResolvedValueOnce(manual)
   await open()
   await button('Saisir ma formation manuellement').trigger('click')
-  await wrapper.get('input[required]').setValue(manual.title)
-  const [start, end] = wrapper.findAll('input[type="date"]')
-  await start!.setValue('2026-09-01')
-  await end!.setValue('2026-01-01')
+  await button('Saisir le nom de ma formation').trigger('click')
+  const [school, title] = wrapper.findAll('input[type="text"][required]')
+  await title!.setValue(manual.title)
+  await wrapper.get('input[type="date"]').setValue('2026-09-01')
+  const save = wrapper.get<HTMLButtonElement>('button[type="submit"]')
+  await school!.setValue('  ')
+  expect(save.element.disabled).toBe(true)
+  await wrapper.get('form').trigger('submit')
+  expect(api.createEducation).not.toHaveBeenCalled()
+  await school!.setValue(manual.school)
+  expect(save.element.disabled).toBe(false)
+  const end = wrapper.get('input[type="date"]:not([required])')
+  await end.setValue('2026-01-01')
   await wrapper.get('form').trigger('submit')
   expect(api.createEducation).not.toHaveBeenCalled()
   await end!.setValue('')
@@ -214,6 +282,7 @@ it('keeps homonymous declarations distinguishable at resume and moves focus afte
   const second = {
     ...stored,
     id: 'second',
+    startDate: '2026-09-01',
     catalogOfferId: secondOffer.id,
     studyField: { id: 'f', label: 'Informatique' },
   }
@@ -221,18 +290,21 @@ it('keeps homonymous declarations distinguishable at resume and moves focus afte
   vi.mocked(api.getCampusOffers).mockResolvedValue([mba, secondOffer])
   vi.mocked(api.updateEducation).mockResolvedValue(second)
   await open()
-  const list = wrapper.get('section[aria-label="Vos formations enregistrées"]')
-  expect(document.activeElement).toBe(list.element)
-  const pick = button('ens · mba-2')
-  expect(pick.text()).toContain('1 an')
-  await pick.trigger('click')
+  const pick = wrapper
+    .getComponent(BaseSelect)
+    .props('options')
+    .find((item) => item.value === second.id)
+  expect(pick?.label).toContain('ens · mba-2')
+  expect(pick?.label).toContain('1 an')
+  await chooseOption(second.id)
   expect(wrapper.text()).toContain('Famille d’études · Informatique')
   expect(wrapper.text()).toContain('ens · mba-2')
   expect(wrapper.text()).toContain('1 an')
   await button('Saisir ma formation manuellement').trigger('click')
   expect(document.activeElement).toBe(wrapper.find('input').element)
   await button('Garder la formation enregistrée').trigger('click')
-  expect(document.activeElement?.textContent).toContain(stored.title)
+  expect(document.activeElement).toBe(wrapper.get('input[role="combobox"]').element)
+  expect(wrapper.getComponent(BaseSelect).props('modelValue')).toBe(secondOffer.id)
   await wrapper.get('form').trigger('submit')
   await flushPromises()
   expect(document.activeElement).toBe(wrapper.get('section[aria-label="Confirmation"]').element)
@@ -240,21 +312,186 @@ it('keeps homonymous declarations distinguishable at resume and moves focus afte
   expect(document.activeElement).toBe(
     wrapper.get('section[aria-label="Vos formations enregistrées"]').element,
   )
-  expect(api.getCampusOffers).toHaveBeenCalledTimes(1)
 })
 
-it('prefills only the chosen replacement campus in free entry and preserves the original when explicitly restored', async () => {
-  vi.mocked(api.listEducations).mockResolvedValue([stored])
+it('opens a blank manual form and restores saved values only on explicit request', async () => {
+  const row = { ...stored, startDate: '2025-09-01', endDate: '2027-06-30' }
+  vi.mocked(api.listEducations).mockResolvedValue([row])
   await open()
-  expect(wrapper.text()).not.toContain('Réf.')
-  await button('Choisir une autre formation').trigger('click')
-  const next = { id: 'ens-b', label: 'École B', city: 'Meylan', address: '1 rue des Écoles' }
-  await searchAndSelect(next)
+  await searchAndSelect({ ...campus, id: 'other', label: 'École B' })
   await button('Saisir ma formation manuellement').trigger('click')
-  const values = () =>
-    wrapper.findAll('input[type="text"]').map((field) => (field.element as HTMLInputElement).value)
-  expect(values()).toEqual([next.label, '', ''])
+  expect(
+    wrapper.findAll<HTMLInputElement>('input').every((field) => field.element.value === ''),
+  ).toBe(true)
+  expect(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(true)
   await button('Garder la formation enregistrée').trigger('click')
-  await button('Saisir ma formation manuellement').trigger('click')
-  expect(values()).toEqual([stored.school, stored.title, stored.level])
+  expect(wrapper.get<HTMLInputElement>('input[role="combobox"]').element.value).toBe(row.school)
+  expect(wrapper.getComponent(BaseSelect).props('modelValue')).toBe(row.catalogOfferId)
+  expect(wrapper.get<HTMLInputElement>('input[type="date"][required]').element.value).toBe(
+    row.startDate,
+  )
+  expect(wrapper.get<HTMLInputElement>('input[type="date"][min]').element.value).toBe(row.endDate)
+  expect(wrapper.get<HTMLInputElement>('input[type="radio"]:checked').element.value).toBe('2027')
+  expect(api.updateEducation).not.toHaveBeenCalled()
+})
+
+it('resets both forms, including address, dates and year, on repeated switches', async () => {
+  vi.stubEnv('VITE_MANUAL_SCHOOL_ADDRESS', 'true')
+  try {
+    await open()
+    await searchAndSelect()
+    await chooseOption(mba.id)
+    await wrapper.get('input[type="date"][required]').setValue('2026-06-10')
+    await wrapper.get('input[type="radio"][value="2027"]').setValue()
+    await wrapper.get('input[type="date"][min]').setValue('2027-06-30')
+    await button('Saisir ma formation manuellement').trigger('click')
+    const textFields = () =>
+      wrapper.findAll<HTMLInputElement>('input[type="text"], input[role="combobox"]')
+    expect(textFields().map((field) => field.element.value)).toEqual(['', '', ''])
+    await button('Saisir le nom de ma formation').trigger('click')
+    const [school, address, title] = textFields()
+    await school!.setValue('École B')
+    await address!.setValue('Rue des Écoles')
+    await title!.setValue('Formation libre')
+    await wrapper.get('input[type="date"][required]').setValue('2026-09-01')
+    await wrapper.get('input[type="radio"][value="2028"]').setValue()
+    await wrapper.get('input[type="date"][min]').setValue('2028-06-30')
+    await button('Retour aux établissements').trigger('click')
+    const search = wrapper.get<HTMLInputElement>('input[role="combobox"]')
+    expect(search.element.value).toBe('')
+    expect(document.activeElement).toBe(search.element)
+    expect(wrapper.getComponent(BaseSelect).props('modelValue')).toBe('')
+    expect(wrapper.getComponent(BaseSelect).props('options')).toEqual([])
+    expect(wrapper.get<HTMLInputElement>('input[type="date"]').element.value).toBe('')
+    expect(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(true)
+    await wrapper.get('input[type="date"]').setValue('2026-09-01')
+    expect(wrapper.find('input[type="radio"]:checked').exists()).toBe(false)
+    expect(wrapper.get<HTMLInputElement>('input[type="date"][min]').element.value).toBe('')
+    await button('Saisir ma formation manuellement').trigger('click')
+    expect(textFields().map((field) => field.element.value)).toEqual(['', '', ''])
+    expect(wrapper.get<HTMLInputElement>('input[type="date"]').element.value).toBe('')
+    expect(api.createEducation).not.toHaveBeenCalled()
+    expect(api.updateEducation).not.toHaveBeenCalled()
+  } finally {
+    vi.unstubAllEnvs()
+  }
+})
+
+it('restores and clears the manual school address when the backend supports it', async () => {
+  vi.stubEnv('VITE_MANUAL_SCHOOL_ADDRESS', 'true')
+  try {
+    const row: IEducationDto = {
+      ...stored,
+      source: 'MANUAL',
+      catalogCampusId: null,
+      catalogOfferId: null,
+      startDate: '2025-09-01',
+      schoolAddress: '22 rue Galilée, 38400 Saint-Martin-d’Hères',
+    }
+    vi.mocked(api.listEducations).mockResolvedValue([row])
+    vi.mocked(api.updateEducation).mockResolvedValue({ ...row, schoolAddress: null })
+    await open()
+    expect(button('Rechercher un établissement').exists()).toBe(true)
+    await button('Rechercher un établissement').trigger('click')
+    await button('Saisir ma formation manuellement').trigger('click')
+    expect(wrapper.findAll<HTMLInputElement>('input').every((field) => !field.element.value)).toBe(
+      true,
+    )
+    await button('Garder la formation enregistrée').trigger('click')
+    function field(label: string) {
+      const caption = wrapper.findAll('label').find((item) => item.text().includes(label))!
+      return wrapper.get<HTMLInputElement>('#' + caption.attributes('for'))
+    }
+    expect(field('Établissement').element).toBe(document.activeElement)
+    expect(field('Établissement').element.value).toBe(row.school)
+    expect(field('Intitulé de la formation').element.value).toBe(row.title)
+    expect(field('Début des études').element.value).toBe(row.startDate)
+    const address = field('Adresse de l’établissement')
+    expect(address.element.value).toBe(row.schoolAddress)
+    await address.setValue('')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(api.updateEducation).toHaveBeenCalledWith(
+      row.id,
+      expect.objectContaining({ schoolAddress: null }),
+    )
+  } finally {
+    vi.unstubAllEnvs()
+  }
+})
+
+it.each([true, false])(
+  'reads the saved offer after a lost update before confirming a retry (revert: %s)',
+  async (revert) => {
+    const original = { ...stored, startDate: '2026-09-01' }
+    const secondOffer = { ...mba, id: 'master', label: 'Autre master' }
+    const persisted = { ...original, catalogOfferId: secondOffer.id, title: secondOffer.label }
+    vi.mocked(api.listEducations)
+      .mockResolvedValueOnce([original])
+      .mockResolvedValueOnce([persisted])
+    vi.mocked(api.getCampusOffers).mockResolvedValue([mba, secondOffer])
+    vi.mocked(api.updateEducation)
+      .mockRejectedValueOnce(new Error('Response lost'))
+      .mockResolvedValueOnce(original)
+    await open()
+    await chooseOption(secondOffer.id)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(wrapper.text()).toContain('L’enregistrement n’a pas pu être confirmé')
+    if (revert) await chooseOption(mba.id)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(api.listEducations).toHaveBeenCalledTimes(2)
+    expect(api.updateEducation).toHaveBeenCalledTimes(revert ? 2 : 1)
+    expect(api.updateEducation).toHaveBeenLastCalledWith(
+      original.id,
+      expect.objectContaining({ catalogOfferId: revert ? mba.id : secondOffer.id }),
+    )
+    expect(wrapper.get('section[aria-label="Confirmation"]').text()).toContain(
+      revert ? original.title : persisted.title,
+    )
+  },
+)
+
+it('only warns on leaving a new manual form when it contains an actual draft', async () => {
+  const router = await open()
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  try {
+    await button('Saisir ma formation manuellement').trigger('click')
+    await router.push('/')
+    expect(router.currentRoute.value.name).toBe('home')
+    expect(confirm).not.toHaveBeenCalled()
+    await router.push('/studies')
+    await flushPromises()
+    await button('Saisir ma formation manuellement').trigger('click')
+    await wrapper.get('input[role="combobox"]').setValue('mba')
+    await router.push('/')
+    expect(router.currentRoute.value.name).toBe('student-studies')
+    expect(confirm).toHaveBeenCalledOnce()
+  } finally {
+    confirm.mockRestore()
+  }
+})
+
+it('clears the previous manual degree level when the student replaces the course', async () => {
+  const record: IEducationDto = {
+    ...stored,
+    source: 'MANUAL',
+    catalogOfferId: null,
+    catalogCampusId: null,
+    startDate: '2026-09-01',
+    level: 'bac + 5',
+  }
+  vi.mocked(api.listEducations).mockResolvedValue([record])
+  vi.mocked(api.updateEducation).mockResolvedValue({ ...record, title: 'BTS', level: null })
+  await open()
+  await button('Saisir le nom de ma formation').trigger('click')
+  const label = wrapper.findAll('label').find((item) => item.text().includes('Intitulé'))!
+  await wrapper.get('#' + label.attributes('for')).setValue('BTS')
+  await wrapper.get('form').trigger('submit')
+  await flushPromises()
+  expect(api.updateEducation).toHaveBeenCalledWith(
+    record.id,
+    expect.objectContaining({ title: 'BTS', level: null }),
+  )
 })

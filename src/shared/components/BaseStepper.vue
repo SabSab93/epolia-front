@@ -23,12 +23,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-export type StepperStatus = 'completed' | 'current' | 'incomplete' | 'upcoming'
+export type StepperStatus = 'completed' | 'current' | 'incomplete' | 'upcoming' | 'unknown'
 
 export interface StepperStep {
   id: string
   label: string
-  completed?: boolean
+  completed?: boolean | null
 }
 
 const props = withDefaults(
@@ -52,6 +52,7 @@ const DEFAULT_STATUS_LABELS: Record<StepperStatus, string> = {
   current: 'Étape en cours',
   incomplete: 'À compléter',
   upcoming: 'À venir',
+  unknown: 'Progression à vérifier',
 }
 
 const labels = computed(() => ({ ...DEFAULT_STATUS_LABELS, ...props.statusLabels }))
@@ -59,16 +60,16 @@ const currentIndex = computed(() =>
   props.steps.findIndex((step) => step.id === props.currentStepId),
 )
 
+function stepStatus(step: StepperStep, index: number): StepperStatus {
+  if (index === currentIndex.value) return 'current'
+  if (step.completed) return 'completed'
+  if (index < currentIndex.value) return step.completed === null ? 'unknown' : 'incomplete'
+  return 'upcoming'
+}
+
 const items = computed(() =>
   props.steps.map((step, index) => {
-    const status: StepperStatus =
-      index === currentIndex.value
-        ? 'current'
-        : step.completed
-          ? 'completed'
-          : currentIndex.value >= 0 && index < currentIndex.value
-            ? 'incomplete'
-            : 'upcoming'
+    const status = stepStatus(step, index)
     return { step, index, status, statusLabel: labels.value[status] }
   }),
 )

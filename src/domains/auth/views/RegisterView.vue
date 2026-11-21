@@ -164,6 +164,7 @@ import RegistrationTerms from '@/domains/auth/components/RegistrationTerms.vue'
 import terms from '@/domains/auth/content/cgu-test-v1.json'
 import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
+import { firstStudentStepDestination } from '@/domains/onboarding/studentSteps'
 import { ApiError } from '@/shared/api/apiClient'
 import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
@@ -298,8 +299,10 @@ async function submit() {
       termsVersion: demoTermsVersion,
     })
     password.value = ''
-    // The next step: enter the 6-digit code sent by e-mail.
-    await router.replace({ name: 'email-verification' })
+    const destination = auth.user?.roles.includes(AccountRoleEnum.Student)
+      ? firstStudentStepDestination()
+      : { name: 'email-verification' }
+    await router.replace(destination)
   } catch (error) {
     const code = error instanceof ApiError ? error.code : undefined
     switch (code) {

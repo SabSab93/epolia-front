@@ -48,9 +48,13 @@ export function useAdditionalRoleRegistration(getRole: () => AccountRoleEnum) {
     }
   }
 
+  function openOnboarding() {
+    return router.push({ name: 'student-onboarding' })
+  }
+
   return {
     isStudent,
-    openStudies: () => router.push({ name: 'student-studies' }),
+    openOnboarding,
     title,
     description,
     hasRole,

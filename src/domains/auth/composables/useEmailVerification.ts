@@ -1,7 +1,9 @@
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import { ApiError } from '@/shared/api/apiClient'
-import { codeLength } from '@/shared/components/BaseCodeInput.vue'
+import BaseCodeInput, { codeLength } from '@/shared/components/BaseCodeInput.vue'
 
 // Same delay as the server: a new code cannot be requested within a minute.
 const resendDelaySeconds = 60
@@ -39,6 +41,7 @@ function resendErrorMessage(error: unknown) {
 }
 
 export function useEmailVerification() {
+  const router = useRouter()
   const auth = useAuthStore()
   const verified = computed(() => auth.user?.emailVerified === true)
   const code = ref('')
@@ -144,9 +147,50 @@ export function useEmailVerification() {
     }
   }
 
+  const email = computed(() => auth.user?.email ?? '')
+  const codeInput = useTemplateRef<InstanceType<typeof BaseCodeInput>>('codeInput')
+
+  async function requestNewCode() {
+    if (!(await resend())) return
+    await nextTick()
+    codeInput.value?.focus()
+  }
+
+  function openOnboarding() {
+    return router.push({ name: 'student-onboarding' })
+  }
+
+  // An incorrect code: return to the field so the person can correct it.
+  watch(codeError, async (message) => {
+    if (!message) return
+    await nextTick()
+    codeInput.value?.focus()
+  })
+
+  // Confirmed by the server: nothing left to do on this page.
+  watch(
+    verified,
+    (isVerified) => {
+      if (isVerified) {
+        const student = auth.user?.roles.includes(AccountRoleEnum.Student)
+        router.replace({ name: student ? 'student-onboarding' : 'home' })
+      }
+    },
+    { immediate: true },
+  )
+
+  // An expired session cannot verify a code: the login page explains why.
+  watch(
+    () => auth.isAuthenticated,
+    (isAuthenticated) => {
+      if (!isAuthenticated) router.replace({ name: 'login' })
+    },
+  )
+
   return {
     auth,
-    verified,
+    email,
+    openOnboarding,
     code,
     codeError,
     blockedMessage,
@@ -160,6 +204,6 @@ export function useEmailVerification() {
     secondsLeft,
     countdown,
     verify,
-    resend,
+    requestNewCode,
   }
 }

@@ -3,7 +3,7 @@
     <div class="flex flex-col gap-epolia-md">
       <template v-if="hasRole">
         <p ref="confirmation" tabindex="-1">{{ successMessage }}</p>
-        <BaseButton v-if="isStudent" label="Compléter mes études" @click="openStudies" />
+        <BaseButton v-if="isStudent" label="Compléter mon profil étudiant" @click="openOnboarding" />
       </template>
       <form v-else class="flex flex-col gap-epolia-md" @submit.prevent="confirmRole">
         <p>{{ description }}</p>
@@ -28,7 +28,7 @@ const {
   description,
   hasRole,
   isStudent,
-  openStudies,
+  openOnboarding,
   successMessage,
   isSubmitting,
   errorMessage,

@@ -4,6 +4,7 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import App from '@/App.vue'
 import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
+import { firstStudentStepDestination, studentSteps } from '@/domains/onboarding/studentSteps'
 import { createAppRouter } from '@/router'
 import { deferred } from '@/tests/deferred'
 
@@ -106,11 +107,14 @@ it.each([AccountRoleEnum.Student, AccountRoleEnum.Customer])(
   'creates an account using the selected role (%s) and submits only once',
   async (role) => {
     const reply = deferred<Response>()
-    // After registration, the private verification page reads the account again.
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockReturnValueOnce(reply.promise)
-      .mockImplementation(async () => Response.json(currentUser(role)))
+      .mockImplementation(async (url) =>
+        Response.json(
+          new URL(String(url)).pathname === '/api/student-educations/me' ? [] : currentUser(role),
+        ),
+      )
     vi.stubGlobal('fetch', fetchMock)
     const { router, wrapper, button, fillForm, readTerms, submit } = await openRegistration(role)
     await fillForm()
@@ -155,9 +159,18 @@ it.each([AccountRoleEnum.Student, AccountRoleEnum.Customer])(
       ),
     )
     await flushPromises()
-    await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('email-verification'))
-    await flushPromises()
-    expect(wrapper.text()).toContain('Nous avons envoyé un code à 6 chiffres à camille@example.fr.')
+    if (role === AccountRoleEnum.Student) {
+      await vi.waitFor(() =>
+        expect(router.currentRoute.value.name).toBe(firstStudentStepDestination().name),
+      )
+      await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe(studentSteps[0].title))
+    } else {
+      await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('email-verification'))
+      await flushPromises()
+      expect(wrapper.text()).toContain(
+        'Nous avons envoyé un code à 6 chiffres à camille@example.fr.',
+      )
+    }
   },
 )
 
@@ -221,7 +234,9 @@ it('blocks a role change during submission and resets the form for the next role
     ),
   )
   await flushPromises()
-  await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('email-verification'))
+  await vi.waitFor(() =>
+    expect(router.currentRoute.value.name).toBe(firstStudentStepDestination().name),
+  )
 
   await router.push(customerRegistration)
   expect(wrapper.text()).toContain('Vous êtes étudiant ?')

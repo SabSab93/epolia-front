@@ -6,6 +6,7 @@ import App from '@/App.vue'
 import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import { readAccessToken, writeAccessToken } from '@/domains/auth/stores/sessionStorage'
+import { studentSteps } from '@/domains/onboarding/studentSteps'
 import { createAppRouter } from '@/router'
 
 vi.mock('@/domains/auth/stores/sessionStorage', () => ({
@@ -28,13 +29,15 @@ afterEach(() => {
 
 type Reply = () => Response | Promise<Response>
 
-const account = (emailVerified: boolean) => () =>
-  Response.json({
-    id: 'user-id',
-    email: 'camille@example.fr',
-    emailVerified,
-    roles: [AccountRoleEnum.Customer],
-  })
+const account =
+  (emailVerified: boolean, role = AccountRoleEnum.Customer) =>
+  () =>
+    Response.json({
+      id: 'user-id',
+      email: 'camille@example.fr',
+      emailVerified,
+      roles: [role],
+    })
 
 const routes = {
   me: '/api/auth/me',
@@ -55,6 +58,7 @@ function stubApi() {
     const route = (Object.keys(routes) as (keyof typeof routes)[]).find(
       (name) => routes[name] === path,
     )
+    if (path === '/api/student-educations/me') return Response.json([])
     if (!route) throw new Error(`Unexpected request: ${path}`)
     return server[route]()
   })
@@ -313,3 +317,21 @@ it('shows the confirmation even when the account cannot be read again afterwards
   expect(wrapper.text()).not.toContain('Vérification non confirmée.')
   await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('home'))
 })
+
+it.each([false, true])(
+  'opens the shared onboarding for a student (email already verified: %s)',
+  async (verified) => {
+    const { server } = stubApi()
+    server.me = account(verified, AccountRoleEnum.Student)
+    const { router, wrapper, button } = await openVerification()
+    if (!verified) await button('Compléter mon profil étudiant en attendant')!.trigger('click')
+    const first = studentSteps[0]
+    await vi.waitFor(() => expect(wrapper.get('h1').text()).toBe(first.title))
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(document.title).toBe(first.title + ' · Epolia')
+    expect(wrapper.get('[aria-current="step"]').text()).toContain(first.title)
+    expect(router.currentRoute.value.meta.studentStep).toBe(first.id)
+    await router.push('/compte/etudes')
+    expect(router.currentRoute.value.meta.studentStep).toBe('studies')
+  },
+)

@@ -37,8 +37,12 @@
       <SelectPortal>
         <SelectContent position="popper" :side-offset="8" class="epolia-select-menu">
           <SelectViewport>
-            <SelectItem v-if="!required" :value="emptyValue" class="select-option">
-              <SelectItemText>{{ placeholder }}</SelectItemText>
+            <SelectItem
+              v-if="!required"
+              :value="emptyValue"
+              class="select-option epolia-dropdown-option"
+            >
+              <SelectItemText class="min-w-0 line-clamp-3">{{ placeholder }}</SelectItemText>
               <SelectItemIndicator class="select-check" aria-hidden="true">✓</SelectItemIndicator>
             </SelectItem>
             <SelectItem
@@ -46,9 +50,9 @@
               :key="option.value"
               :value="option.value"
               :disabled="option.disabled"
-              class="select-option"
+              class="select-option epolia-dropdown-option"
             >
-              <SelectItemText>{{ option.label }}</SelectItemText>
+              <SelectItemText class="min-w-0 line-clamp-3">{{ option.label }}</SelectItemText>
               <SelectItemIndicator class="select-check" aria-hidden="true">✓</SelectItemIndicator>
             </SelectItem>
           </SelectViewport>
@@ -139,6 +143,7 @@ const props = withDefaults(
     id?: string
     name?: string
     form?: string
+    emptyMessage?: string
     placeholder?: string
     help?: string
     error?: string
@@ -152,6 +157,7 @@ const props = withDefaults(
     form: undefined,
     help: undefined,
     error: undefined,
+    emptyMessage: 'Aucune option disponible.',
     placeholder: 'Choisir une option',
     required: false,
     disabled: false,
@@ -198,7 +204,7 @@ watch([model, () => props.required, isDisabled], () => {
 })
 const unavailableMessage = computed(() =>
   !props.options.length
-    ? 'Aucune option disponible.'
+    ? props.emptyMessage
     : unavailable.value
       ? 'Aucune option sélectionnable.'
       : undefined,
@@ -414,11 +420,6 @@ watchPostEffect((onCleanup) => {
   cursor: pointer;
 }
 
-.select-option[data-highlighted] {
-  outline: none;
-  background: var(--color-epolia-secondary-hover);
-}
-
 .select-option[data-disabled] {
   color: var(--color-epolia-text-secondary);
   cursor: not-allowed;
@@ -430,11 +431,6 @@ watchPostEffect((onCleanup) => {
 }
 
 @media (forced-colors: active) {
-  .select-option[data-highlighted] {
-    background: Highlight;
-    color: HighlightText;
-    forced-color-adjust: none;
-  }
   .select-check {
     color: currentColor;
   }

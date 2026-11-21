@@ -34,12 +34,6 @@
         </template>
         <template v-else-if="auth.isAuthenticated || auth.removalFailed || signingOut">
           <BaseButton
-            v-if="auth.user?.roles.includes(AccountRoleEnum.Student)"
-            label="Mes études"
-            class="w-full"
-            @click="router.push({ name: 'student-studies' })"
-          />
-          <BaseButton
             label="Se déconnecter"
             variant="secondary"
             class="w-full"
@@ -52,14 +46,9 @@
             label="S’inscrire"
             variant="primary"
             class="w-full"
-            @click="router.push({ name: 'choose-role' })"
+            @click="openRegistration"
           />
-          <BaseButton
-            label="Se connecter"
-            variant="secondary"
-            class="w-full"
-            @click="router.push({ name: 'login' })"
-          />
+          <BaseButton label="Se connecter" variant="secondary" class="w-full" @click="openLogin" />
         </template>
         <BaseAlert
           :message="
@@ -90,40 +79,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
-import { useRouter } from 'vue-router'
 import AppHeader from '@/AppHeader.vue'
-import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
-import { useAuthStore } from '@/domains/auth/stores/authStore'
+import { useHomeView } from '@/composables/useHomeView'
 import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseLoader from '@/shared/components/BaseLoader.vue'
 import BaseTitle from '@/shared/components/BaseTitle.vue'
 
-const router = useRouter()
-const auth = useAuthStore()
-const content = useTemplateRef('content')
-const signingOut = ref(false)
-const signedOut = ref(false)
-const checkingSession = computed(() => auth.isRestoring && auth.status !== 'unavailable')
-
-onMounted(() => content.value?.focus())
-
-async function retrySession() {
-  await auth.restore()
-  if (auth.status !== 'unavailable') {
-    await nextTick()
-    content.value?.focus()
-  }
-}
-
-async function signOut() {
-  signingOut.value = true
-  signedOut.value = false
-  await auth.logout()
-  signingOut.value = false
-  signedOut.value = !auth.removalFailed
-  await nextTick()
-  content.value?.focus()
-}
+const {
+  auth,
+  checkingSession,
+  signingOut,
+  signedOut,
+  retrySession,
+  signOut,
+  openRegistration,
+  openLogin,
+} = useHomeView()
 </script>
