@@ -1,7 +1,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick, reactive } from 'vue'
-import meta, { type AlertStoryArgs } from '@/shared/components/BaseAlert.stories'
+import meta, { type AlertStoryArgs } from '@/shared/components/stories/BaseAlert.stories'
 
 enableAutoUnmount(afterEach)
 

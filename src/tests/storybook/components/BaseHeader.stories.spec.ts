@@ -1,7 +1,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, expect, it } from 'vitest'
 import { nextTick, reactive } from 'vue'
-import meta, { LongTitle, type HeaderStoryArgs } from '@/shared/components/BaseHeader.stories'
+import meta, { LongTitle, type HeaderStoryArgs } from '@/shared/components/stories/BaseHeader.stories'
 
 enableAutoUnmount(afterEach)
 

@@ -1,7 +1,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, expect, it, vi } from 'vitest'
 import { nextTick, reactive } from 'vue'
-import meta, { type MultiSelectStoryArgs } from '@/shared/components/BaseMultiSelect.stories'
+import meta, { type MultiSelectStoryArgs } from '@/shared/components/stories/BaseMultiSelect.stories'
 
 const useArgsMock = vi.hoisted(() => vi.fn())
 vi.mock('storybook/preview-api', () => ({ useArgs: useArgsMock }))

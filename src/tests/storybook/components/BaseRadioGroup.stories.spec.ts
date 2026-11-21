@@ -1,7 +1,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, expect, it, vi } from 'vitest'
 import { nextTick, reactive } from 'vue'
-import meta, { type RadioStoryArgs } from '@/shared/components/BaseRadioGroup.stories'
+import meta, { type RadioStoryArgs } from '@/shared/components/stories/BaseRadioGroup.stories'
 
 const useArgsMock = vi.hoisted(() => vi.fn())
 vi.mock('storybook/preview-api', () => ({ useArgs: useArgsMock }))

@@ -8,6 +8,7 @@ import {
   requestVerificationCode,
   verifyEmailCode as verifyEmailCodeRequest,
 } from '@/domains/auth/api/authApi'
+import type { AuthSessionDto } from '@/domains/auth/models/dtos/authSession.dto'
 import type { LoginInputDto } from '@/domains/auth/models/dtos/loginInput.dto'
 import type { RegisterInputDto } from '@/domains/auth/models/dtos/registerInput.dto'
 import type { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
@@ -127,7 +128,7 @@ export const useAuthStore = defineStore('auth', () => {
     return result
   }
 
-  async function authenticate(request: (signal: AbortSignal) => ReturnType<typeof loginRequest>) {
+  async function authenticate(request: (signal: AbortSignal) => Promise<AuthSessionDto>) {
     if (credentials) throw new Error('Authentication already in progress')
 
     const controller = new AbortController()

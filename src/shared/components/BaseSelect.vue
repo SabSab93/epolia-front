@@ -126,14 +126,11 @@ import {
   SelectItemText,
   SelectItemIndicator,
 } from 'reka-ui'
+import type { SelectOption } from '@/shared/models/types/selectOption.type'
+
+export type { SelectOption }
 
 defineOptions({ inheritAttrs: false })
-
-export interface SelectOption {
-  value: string
-  label: string
-  disabled?: boolean
-}
 
 const props = withDefaults(
   defineProps<{

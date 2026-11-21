@@ -1,7 +1,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, reactive } from 'vue'
-import meta, { type CheckboxStoryArgs } from '@/shared/components/BaseCheckbox.stories'
+import meta, { type CheckboxStoryArgs } from '@/shared/components/stories/BaseCheckbox.stories'
 
 const useArgsMock = vi.hoisted(() => vi.fn())
 vi.mock('storybook/preview-api', () => ({ useArgs: useArgsMock }))

@@ -1,7 +1,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import IconVerified from '~icons/material-symbols/verified'
-import meta, { InheritedColor, Informative } from '@/shared/components/BaseIcon.stories'
+import meta, { InheritedColor, Informative } from '@/shared/components/stories/BaseIcon.stories'
 import BaseIcon from '@/shared/components/BaseIcon.vue'
 
 enableAutoUnmount(afterEach)

@@ -7,7 +7,7 @@ import meta, {
   renderComposition,
   Start,
   type StepperStoryArgs,
-} from '@/shared/components/BaseStepper.stories'
+} from '@/shared/components/stories/BaseStepper.stories'
 
 enableAutoUnmount(afterEach)
 
