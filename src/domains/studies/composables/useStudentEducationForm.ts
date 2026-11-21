@@ -64,6 +64,12 @@ function readOptions<T>(
   }
 }
 
+function matchesEducation(row: Education, input: EducationInput) {
+  // An explicit null converts an older declaration to free entry even when both IDs are null.
+  if (input.catalogOfferId === null && row.source !== 'MANUAL') return false
+  return (Object.keys(input) as (keyof EducationInput)[]).every((key) => row[key] === input[key])
+}
+
 function newCreationKey() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
   // crypto.randomUUID is unavailable over HTTP on a developer's local Wi-Fi.
@@ -97,6 +103,7 @@ export function useStudentEducationForm(
   const offerId = ref('')
   const title = ref(education?.title ?? '')
   const school = ref(education?.school ?? '')
+  let manualCampusId = education?.catalogCampusId ?? null
   const level = ref(education?.level ?? '')
   const start = ref(education?.startDate ?? '')
   const end = ref(education?.endDate ?? '')
@@ -173,14 +180,22 @@ export function useStudentEducationForm(
     error.value = ''
   }
   function enterManual() {
+    if (mode.value === 'catalog' && campus.value) {
+      if (manualCampusId !== campus.value.id) {
+        title.value = ''
+        level.value = ''
+      }
+      school.value = campus.value.label
+      manualCampusId = campus.value.id
+    }
     mode.value = 'manual'
     void nextTick(() => document.getElementById(manualSchoolId)?.focus())
     error.value = ''
-    if (!education && campus.value) school.value = campus.value.label
   }
   function restoreOriginal() {
     searchAgain()
     mode.value = initialMode
+    manualCampusId = education?.catalogCampusId ?? null
     void nextTick(() => storedPanel.value?.focus())
     title.value = education?.title ?? ''
     school.value = education?.school ?? ''
@@ -227,6 +242,10 @@ export function useStudentEducationForm(
         school: school.value.trim() || null,
         level: level.value.trim() || null,
       })
+    if (education && matchesEducation(education, input)) {
+      saved(education)
+      return
+    }
     error.value = ''
     saving.value = true
     busy(true)
@@ -239,9 +258,7 @@ export function useStudentEducationForm(
         if (!active) return
         // A retry may return the original creation after the student edited
         // their unsent draft. Bring that row up to date before confirming.
-        if (
-          (Object.keys(input) as (keyof EducationInput)[]).some((key) => row[key] !== input[key])
-        ) {
+        if (!matchesEducation(row, input)) {
           row = await updateEducation(row.id, input)
         }
       }
@@ -289,6 +306,7 @@ export function useStudentEducationForm(
     campusOptions,
     offerOptions,
     validDates,
+    dirty,
     selectCampus,
     searchAgain,
     enterManual,

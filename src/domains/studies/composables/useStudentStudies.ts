@@ -48,12 +48,16 @@ export function useStudentStudies() {
   }
   function recordReference(record: Education) {
     const ids = record.catalogOfferId
-    const repeated = records.value.some(
+    const homonyms = records.value.filter(
       (other) =>
         other.id !== record.id &&
         other.title === record.title &&
         other.school === record.school &&
-        other.level === record.level &&
+        other.level === record.level,
+    )
+    if (!homonyms.length) return ''
+    const repeated = homonyms.some(
+      (other) =>
         other.catalogOfferId === ids &&
         other.catalogCampusId === record.catalogCampusId &&
         other.startDate === record.startDate &&

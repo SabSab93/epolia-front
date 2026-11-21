@@ -62,8 +62,8 @@ function button(text: string) {
   if (!target) throw new Error('Bouton absent : ' + text)
   return target
 }
-async function searchAndSelect() {
-  vi.mocked(api.searchCampuses).mockResolvedValue([campus])
+async function searchAndSelect(selected: Campus = campus) {
+  vi.mocked(api.searchCampuses).mockResolvedValue([selected])
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   try {
     await wrapper.get('input[autocomplete="off"]').setValue('My Digital')
@@ -72,8 +72,8 @@ async function searchAndSelect() {
     vi.useRealTimers()
   }
   await flushPromises()
-  expect(wrapper.text()).toContain(campus.address)
-  await button(campus.label).trigger('click')
+  expect(wrapper.text()).toContain(selected.address)
+  await button(selected.label).trigger('click')
   await flushPromises()
 }
 async function chooseOffer(id: string) {
@@ -120,6 +120,7 @@ it('requires an explicit choice among existing records and preserves an older un
   expect(wrapper.find('form').exists()).toBe(false)
   await button(old.title).trigger('click')
   expect(api.getOfferCandidates).not.toHaveBeenCalled()
+  expect(wrapper.text()).not.toContain('Réf.')
   await wrapper.findAll('input[type="date"]')[1]!.setValue('2028-06-01')
   await wrapper.get('form').trigger('submit')
   await flushPromises()
@@ -240,4 +241,20 @@ it('keeps homonymous declarations distinguishable at resume and moves focus afte
     wrapper.get('section[aria-label="Vos formations enregistrées"]').element,
   )
   expect(api.getCampusOffers).toHaveBeenCalledTimes(1)
+})
+
+it('prefills only the chosen replacement campus in free entry and preserves the original when explicitly restored', async () => {
+  vi.mocked(api.listEducations).mockResolvedValue([stored])
+  await open()
+  expect(wrapper.text()).not.toContain('Réf.')
+  await button('Choisir une autre formation').trigger('click')
+  const next = { id: 'ens-b', label: 'École B', city: 'Meylan', address: '1 rue des Écoles' }
+  await searchAndSelect(next)
+  await button('Saisir ma formation manuellement').trigger('click')
+  const values = () =>
+    wrapper.findAll('input[type="text"]').map((field) => (field.element as HTMLInputElement).value)
+  expect(values()).toEqual([next.label, '', ''])
+  await button('Garder la formation enregistrée').trigger('click')
+  await button('Saisir ma formation manuellement').trigger('click')
+  expect(values()).toEqual([stored.school, stored.title, stored.level])
 })

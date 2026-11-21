@@ -18,7 +18,7 @@
             {{ offerDetail }}
           </p>
           <p
-            v-if="reference || education.catalogOfferId"
+            v-if="reference || (candidateState === 'removed' && education.catalogOfferId)"
             class="text-epolia-body-small text-epolia-text-secondary"
           >
             {{ reference || 'Réf. ' + education.catalogOfferId }}
@@ -33,7 +33,7 @@
             <p
               ref="chosenCampus"
               tabindex="-1"
-              class="rounded-epolia border border-epolia-primary bg-epolia-surface p-epolia-sm break-words"
+              class="picked-campus rounded-epolia border border-epolia-primary bg-epolia-surface p-epolia-sm break-words"
             >
               <strong>{{ campus.label }}</strong
               ><br />{{ [campus.city, campus.address].filter(Boolean).join(' · ') }}
@@ -256,6 +256,10 @@
         />
       </div>
     </fieldset>
+    <p v-if="education && dirty" class="text-epolia-body-small text-epolia-text-secondary">
+      Si votre profil est publié, enregistrer une modification le remettra en brouillon. Les
+      prestations qui ne correspondent plus à vos études seront retirées de votre sélection.
+    </p>
     <BaseAlert :message="error" announcement="assertive" variant="error" />
     <BaseButton type="submit" label="Continuer" :loading="saving" />
   </form>
@@ -299,6 +303,7 @@ const {
   campusOptions,
   offerOptions,
   validDates,
+  dirty,
   searchId,
   manualSchoolId,
   selectCampus,
@@ -315,20 +320,20 @@ const {
 </script>
 
 <style scoped>
-@layer utilities {
-  .school-field :deep(input),
-  .course-field :deep(input),
-  .course-field :deep([role='combobox']) {
-    background-repeat: no-repeat;
-    background-position: left var(--spacing-epolia-md) center;
-    padding-inline-start: var(--spacing-epolia-2xl);
-  }
-  .school-field :deep(input) {
-    background-image: url('@/domains/studies/assets/search.svg');
-  }
-  .course-field :deep(input),
-  .course-field :deep([role='combobox']) {
-    background-image: url('@/domains/studies/assets/book.svg');
-  }
+.school-field .picked-campus,
+.school-field :deep(input),
+.course-field :deep(input),
+.course-field :deep([role='combobox']) {
+  background-repeat: no-repeat;
+  background-position: left var(--spacing-epolia-md) center;
+  padding-inline-start: var(--spacing-epolia-2xl);
+}
+.school-field .picked-campus,
+.school-field :deep(input) {
+  background-image: url('@/domains/studies/assets/search.svg');
+}
+.course-field :deep(input),
+.course-field :deep([role='combobox']) {
+  background-image: url('@/domains/studies/assets/book.svg');
 }
 </style>
