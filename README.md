@@ -173,7 +173,9 @@ Pour un composant partagé, ranger sa story dans `shared/components/stories/` et
 de cette story dans `tests/storybook/components/`. Les tests de son comportement restent
 dans `tests/shared/components/`. Tous ces chemins partent de `src/`.
 
-Un DTO décrit les données envoyées ou reçues par l’API, comme `LoginInputDto`.
+Pour les nouveaux modèles, utiliser `I…Dto` pour une interface de données d’API,
+`…Types` pour un alias de type et `…Enum` pour un enum.
+Un DTO décrit les données envoyées ou reçues par l’API, comme `IEducationDto`.
 Valider le JSON reçu avant de l’utiliser. Un type décrit une donnée manipulée dans
 l’application, comme l’état de session. Un enum fournit des valeurs nommées utilisées
 dans le code, comme les rôles proposés à l’inscription. Réutiliser les modèles existants
@@ -211,6 +213,14 @@ Executer `npm run cap:sync` apres installation. Dans le navigateur (Vite en
 developpement comme build web de recette), le jeton est conserve dans
 `sessionStorage` : il survit au rechargement de l'onglet et disparait a sa
 fermeture. Jamais dans `localStorage`.
+
+## Études et vérification du statut étudiant
+
+La date de début des études est obligatoire. La date de fin prévue est facultative. Epolia prévoit une vérification du statut étudiant chaque année, y compris lorsque la date de fin est inconnue.
+
+### Intitulés de formation en saisie manuelle
+
+Le champ recherche sur l’appareil, sans quota quotidien, parmi les intitulés et sigles de l’export [Idéo-Formations initiales en France](https://www.data.gouv.fr/datasets/ideo-formations-initiales-en-france), produit par l’Onisep sous [licence ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/). L’index est chargé à la première recherche et contient les intitulés acceptés par le profil étudiant (150 caractères maximum). L’index dérivé est distribué sous cette même licence. Pour l’actualiser avant une version, exécuter `node scripts/update-onisep-titles.mjs`.
 
 ## Hooks Git
 
