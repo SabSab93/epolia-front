@@ -16,7 +16,7 @@ import type { AuthUserType } from '@/domains/auth/models/types/authUser.type'
 import type { SessionClearReasonType } from '@/domains/auth/models/types/sessionClearReason.type'
 import type { SessionStatusType } from '@/domains/auth/models/types/sessionStatus.type'
 import { readAccessToken, writeAccessToken } from '@/domains/auth/stores/sessionStorage'
-import { ApiError } from '@/shared/api/apiClient'
+import { ApiError, apiFetch } from '@/shared/api/apiClient'
 
 // One rule for every account request: 401 ends the session, and a 403 means the account
 // can no longer use it. A locked e-mail verification is a 403 too, but the session stays valid.
@@ -206,6 +206,27 @@ export const useAuthStore = defineStore('auth', () => {
     if (reason) await clearSession(reason)
   }
 
+  async function authenticatedFetch(path: `/api/${string}`, options: RequestInit = {}) {
+    const token = accessToken
+    if (!token) throw new ApiError(401, 'Authentication required')
+    const headers = new Headers(options.headers)
+    headers.set('Authorization', 'Bearer ' + token)
+    try {
+      const response = await apiFetch(path, { ...options, headers, cache: 'no-store' })
+      if (accessToken !== token) throw new DOMException('Session changed', 'AbortError')
+      return response
+    } catch (error) {
+      if (accessToken !== token) throw new DOMException('Session changed', 'AbortError')
+      if (
+        error instanceof ApiError &&
+        (error.status === 401 || error.code === 'ACCOUNT_NOT_ACTIVE')
+      ) {
+        await handleSessionError(error)
+      }
+      throw error
+    }
+  }
+
   // Reads the account again without signing out on a network error.
   async function refreshUser() {
     const token = accessToken
@@ -263,6 +284,7 @@ export const useAuthStore = defineStore('auth', () => {
     persistenceFailed,
     verificationEmailSent,
     isAuthenticated,
+    authenticatedFetch,
     isRestoring,
     restore,
     login,

@@ -32,14 +32,21 @@
             @click="retrySession"
           />
         </template>
-        <BaseButton
-          v-else-if="auth.isAuthenticated || auth.removalFailed || signingOut"
-          label="Se déconnecter"
-          variant="secondary"
-          class="w-full"
-          :loading="signingOut"
-          @click="signOut"
-        />
+        <template v-else-if="auth.isAuthenticated || auth.removalFailed || signingOut">
+          <BaseButton
+            v-if="auth.user?.roles.includes(AccountRoleEnum.Student)"
+            label="Mes études"
+            class="w-full"
+            @click="router.push({ name: 'student-studies' })"
+          />
+          <BaseButton
+            label="Se déconnecter"
+            variant="secondary"
+            class="w-full"
+            :loading="signingOut"
+            @click="signOut"
+          />
+        </template>
         <template v-else-if="!auth.isRestoring">
           <BaseButton
             label="S’inscrire"
@@ -86,6 +93,7 @@
 import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '@/AppHeader.vue'
+import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'

@@ -2,6 +2,7 @@ import type { Pinia } from 'pinia'
 import { createRouter, type RouterHistory } from 'vue-router'
 import HomeView from '@/HomeView.vue'
 import { parseAccountRole } from '@/domains/auth/accountRole'
+import { AccountRoleEnum } from '@/domains/auth/models/enums/accountRole.enum'
 import { useAuthStore } from '@/domains/auth/stores/authStore'
 
 declare module 'vue-router' {
@@ -39,6 +40,12 @@ export function createAppRouter(history: RouterHistory, pinia?: Pinia) {
         component: () => import('@/domains/auth/views/AdditionalRoleRegistration.vue'),
       },
       {
+        path: '/compte/etudes',
+        name: 'student-studies',
+        meta: { title: 'Vos études', requiresAuth: true },
+        component: () => import('@/domains/studies/views/StudentStudies.vue'),
+      },
+      {
         path: '/connexion',
         name: 'login',
         meta: { title: 'Se connecter' },
@@ -64,6 +71,9 @@ export function createAppRouter(history: RouterHistory, pinia?: Pinia) {
       const auth = useAuthStore(pinia)
       await auth.restore()
       if (!auth.isAuthenticated) return { name: 'login', replace: true }
+      if (to.name === 'student-studies' && !auth.user?.roles.includes(AccountRoleEnum.Student)) {
+        return { name: 'home', replace: true }
+      }
     }
   })
 

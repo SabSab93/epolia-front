@@ -37,6 +37,25 @@ function setup() {
 }
 
 describe('private routes', () => {
+  it('keeps a customer-only account out of the studies form', async () => {
+    vi.mocked(readAccessToken).mockResolvedValue('stored-token')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          Response.json({
+            id: 'customer',
+            email: 'customer@example.test',
+            emailVerified: true,
+            roles: [AccountRoleEnum.Customer],
+          }),
+        ),
+      ),
+    )
+    const { router } = setup()
+    await router.push('/compte/etudes')
+    expect(router.currentRoute.value.name).toBe('home')
+  })
   it('redirects a visitor without a session to login', async () => {
     const { router } = setup()
     await router.push('/prive')
