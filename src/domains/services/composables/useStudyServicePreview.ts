@@ -6,7 +6,10 @@ import {
   listEducations,
 } from '@/domains/studies/api/studiesApi'
 import { isCompleteCurrentEducation } from '@/domains/studies/models/education'
-import type { IEducationDto, IServiceCatalogueEntryDto } from '@/domains/studies/models/dtos/education.dto'
+import type {
+  IEducationDto,
+  IServiceCatalogueEntryDto,
+} from '@/domains/studies/models/dtos/education.dto'
 
 export function useStudyServicePreview() {
   const savedSteps = inject(savedStepRecordsKey, undefined)
@@ -31,16 +34,21 @@ export function useStudyServicePreview() {
     if (!signal.aborted) recommendedIds.value = rows.map((row) => row.id)
   }
 
-  onMounted(async () => {
-    const [entries] = await Promise.allSettled([getServiceCatalogue(signal), loadRecommendations()])
+  let catalogueLoaded = false
+  let recommendationsLoaded = false
+  async function load() {
+    state.value = 'loading'
+    const [entries, recommendations] = await Promise.allSettled([
+      catalogueLoaded ? catalogue.value : getServiceCatalogue(signal),
+      recommendationsLoaded ? undefined : loadRecommendations(),
+    ])
     if (signal.aborted) return
-    if (entries.status === 'fulfilled') {
-      catalogue.value = entries.value
-      state.value = 'ready'
-    } else {
-      state.value = 'error'
-    }
-  })
+    if (entries.status === 'fulfilled') catalogue.value = entries.value
+    catalogueLoaded = entries.status === 'fulfilled'
+    recommendationsLoaded = recommendations.status === 'fulfilled'
+    state.value = catalogueLoaded && recommendationsLoaded ? 'ready' : 'error'
+  }
+  onMounted(load)
   onBeforeUnmount(() => request.abort())
-  return { study, catalogue, recommendedIds, state }
+  return { study, catalogue, recommendedIds, state, retry: load }
 }

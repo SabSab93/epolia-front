@@ -6,9 +6,10 @@
     </span>
   </p>
   <BaseLoader v-if="state === 'loading'" loading label="Chargement des domaines…" />
-  <p v-else-if="state === 'error'" role="status">
-    Le catalogue des domaines est momentanément indisponible.
-  </p>
+  <div v-else-if="state === 'error'" class="grid gap-epolia-xs">
+    <p role="alert">Impossible de charger toutes les prestations liées à vos études.</p>
+    <BaseButton variant="secondary" label="Réessayer" @click="$emit('retry')" />
+  </div>
   <p v-else-if="empty" role="status">Aucun domaine disponible pour le moment.</p>
   <p v-else-if="!hasAvailableDomain" role="status">
     Aucun domaine n’est actuellement associé à votre formation.
@@ -17,7 +18,9 @@
 
 <script setup lang="ts">
 import type { IEducationDto } from '@/domains/studies/models/dtos/education.dto'
+import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseLoader from '@/shared/components/BaseLoader.vue'
+defineEmits<{ retry: [] }>()
 defineProps<{
   study?: Pick<IEducationDto, 'title' | 'school'>
   state: 'loading' | 'error' | 'ready'

@@ -43,11 +43,17 @@ const education = {
   catalogOfferId: 'bts-esthetique',
   studyFieldId: null,
 }
+const catalogue = initial.eligible.map((item) => ({
+  id: item.id,
+  label: item.label,
+  family: item.domainId === 'images' ? 'Images' : 'Web',
+  description: '',
+}))
 beforeEach(() => {
   localStorage.clear()
   vi.resetAllMocks()
   vi.mocked(listEducations).mockResolvedValue([])
-  vi.mocked(getServiceCatalogue).mockResolvedValue([])
+  vi.mocked(getServiceCatalogue).mockResolvedValue(catalogue)
   vi.mocked(api.loadServiceSelection).mockResolvedValue(initial)
 })
 async function open(owner = 'student') {
@@ -191,12 +197,17 @@ it('keeps Web and Organisation selections together across browsing, saving and r
   expect(wrapper.get('button[type=submit]').attributes('disabled')).toBeDefined()
   expect(api.saveServiceSelection).not.toHaveBeenCalled()
 
+  expect(wrapper.get('button[type=submit]').text()).toBe('Brouillon enregistré')
+  expect(wrapper.get('span[role=status]').text()).toBe('Brouillon enregistré')
+
   const restored = await open()
   expect(restored.get(webDomain).attributes('aria-expanded')).toBe('true')
   expect(restored.get(eventDomain).attributes('aria-expanded')).toBe('true')
   expect(restored.get(webService).element).toHaveProperty('checked', true)
   expect(restored.get(eventService).element).toHaveProperty('checked', true)
   await restored.get(webService).setValue(false)
+  expect(restored.get('button[type=submit]').text()).toBe('Enregistrer mes choix')
+  expect(restored.get('span[role=status]').text()).toBe('')
   expect(restored.get(eventService).element).toHaveProperty('checked', true)
   await restored.get('form').trigger('submit')
   await flushPromises()
@@ -266,9 +277,7 @@ it('does not restore a catalogue domain that loses eligibility after a conflict'
       selected: [],
       eligible: [one],
     })
-  vi.mocked(getServiceCatalogue).mockResolvedValue([
-    { id: two.id, family: 'Web', label: two.label, description: '' },
-  ])
+  vi.mocked(getServiceCatalogue).mockResolvedValue([...catalogue])
   vi.mocked(api.saveServiceSelection).mockRejectedValue(new ApiError(409, 'Conflict'))
   const wrapper = await open()
   await wrapper.get('input[aria-label="Création de site"]').setValue(true)
@@ -304,6 +313,7 @@ it('keeps selections on a network failure and retries the same choice', async ()
 
 it('falls back to the remaining eligible domain when the stored domain still exists but is no longer available', async () => {
   vi.mocked(getServiceCatalogue).mockResolvedValue([
+    ...catalogue,
     { id: 'candidate-images', family: 'Images', label: 'Agrandissement', description: '' },
   ])
   vi.mocked(api.loadServiceSelection).mockResolvedValue({ ...initial, eligible: [two] })
@@ -418,6 +428,7 @@ it('keeps a mixed selection local even with a revision and saves once only eligi
   vi.mocked(listEducations).mockResolvedValue([education])
   vi.mocked(getOfferCandidates).mockResolvedValue([candidateService])
   vi.mocked(getServiceCatalogue).mockResolvedValue([
+    ...catalogue,
     candidateService,
     { ...candidateService, id: 'not-recommended', label: 'Autre atelier' },
   ])
@@ -462,3 +473,60 @@ it('keeps focus on the specialty when adding and removing the last selected chip
   expect(wrapper.findAll('input[type=checkbox]')).toHaveLength(1)
   expect(api.saveServiceSelection).not.toHaveBeenCalled()
 })
+
+it('keeps historical specialties and their prices on the account without offering them in V1', async () => {
+  const legacy = { id: 'legacy', label: 'Arrosage de plantes', domainId: 'garden' }
+  vi.mocked(api.loadServiceSelection).mockResolvedValue({
+    ...initial,
+    domainId: 'garden',
+    domains: [...initial.domains, { id: 'garden', label: 'Jardinage' }],
+    eligible: [legacy, two],
+    selected: [legacy],
+  })
+  vi.mocked(listEducations).mockResolvedValue([education])
+  vi.mocked(getOfferCandidates).mockResolvedValue([])
+  const wrapper = await open()
+  expect(wrapper.find('button[value="garden"]').exists()).toBe(false)
+  expect(wrapper.find('input[aria-label="Arrosage de plantes"]').exists()).toBe(false)
+  expect(wrapper.get('[aria-label="Prestations conservées"]').text()).toContain(legacy.label)
+  await wrapper.get('input[aria-label="Création de site"]').setValue(true)
+  await wrapper.get('form').trigger('submit')
+  expect(wrapper.get('button[type=submit]').text()).toBe('Brouillon enregistré')
+  expect(api.saveServiceSelection).not.toHaveBeenCalled()
+  expect(wrapper.getComponent(BaseModal).props('open')).toBe(false)
+})
+it.each(['catalogue', 'études', 'recommandations'])(
+  'retries a failed %s request without displaying an empty result or losing the draft',
+  async (failure) => {
+    vi.mocked(api.loadServiceSelection).mockResolvedValue({
+      ...initial,
+      revision: null,
+      eligible: [],
+      selected: [],
+    })
+    vi.mocked(listEducations).mockResolvedValue([education])
+    vi.mocked(getOfferCandidates).mockResolvedValue([catalogue[0]!])
+    const wrapper = await open()
+    await wrapper.get('input[type=checkbox]').setValue(true)
+    await wrapper.get('form').trigger('submit')
+    wrapper.unmount()
+    const failed =
+      failure === 'catalogue'
+        ? getServiceCatalogue
+        : failure === 'études'
+          ? listEducations
+          : getOfferCandidates
+    vi.mocked(failed).mockRejectedValueOnce(new Error('offline'))
+    const restored = await open()
+    expect(restored.get('[role=alert]').text()).toContain('Impossible de charger')
+    expect(restored.text()).not.toContain('Aucun domaine')
+    const retry = restored.findAll('button').find((button) => button.text() === 'Réessayer')!
+    await retry.trigger('click')
+    await flushPromises()
+    expect(restored.find('[role=alert]').exists()).toBe(false)
+    expect(restored.get('input[aria-label="Montage vidéo"]').element).toHaveProperty(
+      'checked',
+      true,
+    )
+  },
+)

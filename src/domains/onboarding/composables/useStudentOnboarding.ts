@@ -1,4 +1,5 @@
 import { computed, provide, ref, useTemplateRef, watch } from 'vue'
+import { useAuthStore } from '@/domains/auth/stores/authStore'
 import type BaseTitle from '@/shared/components/BaseTitle.vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -11,6 +12,7 @@ import {
 export function useStudentOnboarding() {
   const route = useRoute()
   const router = useRouter()
+  const auth = useAuthStore()
   const heading = useTemplateRef<InstanceType<typeof BaseTitle>>('heading')
   const replay = computed(() => isStudentReplay(route.query))
   const completed = ref<Record<string, boolean | undefined>>({})
@@ -19,6 +21,25 @@ export function useStudentOnboarding() {
   const index = computed(() => studentSteps.findIndex((step) => step.id === route.meta.studentStep))
   const active = computed(() => studentSteps[index.value])
   const previous = computed(() => studentSteps[index.value - 1])
+  // Remember the active education across refreshes in this tab. Its ownership and
+  // current dates are rechecked against the student's private education list.
+  function educationKey() {
+    return auth.user && 'epolia:active-education:' + JSON.stringify([auth.user.id, replay.value])
+  }
+  function resumeEducation(restarting: boolean) {
+    savedRecords.value = {}
+    const key = educationKey()
+    if (!key) return
+    try {
+      if (restarting && active.value?.id === 'studies') sessionStorage.removeItem(key)
+      else {
+        const id = sessionStorage.getItem(key)
+        if (id) savedRecords.value.studies = id
+      }
+    } catch {
+      // The in-memory reference still supports moving between steps on this visit.
+    }
+  }
   function destinationForStep(id: string) {
     const destination = stepDestination(id)
     return replay.value ? { ...destination, query: { recommencer: '1' } } : destination
@@ -46,7 +67,7 @@ export function useStudentOnboarding() {
     ([position, restarting], [, wasRestarting], onCleanup) => {
       if (restarting !== wasRestarting) {
         completed.value = {}
-        savedRecords.value = {}
+        resumeEducation(restarting)
       }
       if (restarting) return
       const request = new AbortController()
@@ -71,7 +92,17 @@ export function useStudentOnboarding() {
   }
   function advanceAfterSave(recordId?: string) {
     if (!active.value) return
-    if (recordId) savedRecords.value[active.value.id] = recordId
+    if (recordId) {
+      savedRecords.value[active.value.id] = recordId
+      const key = educationKey()
+      if (key && active.value.id === 'studies') {
+        try {
+          sessionStorage.setItem(key, recordId)
+        } catch {
+          // Storage may be disabled. Continue with this visit's saved record.
+        }
+      }
+    }
     restoreStep(true)
     const next = studentSteps[index.value + 1]
     if (next) void router.push(destinationForStep(next.id))

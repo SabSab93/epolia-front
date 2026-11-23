@@ -21,7 +21,13 @@ export function useStudentServices(emit: {
   (event: 'restored', saved: boolean): void
 }) {
   const snapshot = ref<IServiceSelectionDto>()
-  const { study, catalogue, recommendedIds, state: catalogueState } = useStudyServicePreview()
+  const {
+    study,
+    catalogue,
+    recommendedIds,
+    state: catalogueState,
+    retry: retryCatalogue,
+  } = useStudyServicePreview()
   const auth = useAuthStore()
   const owner = auth.user?.id
   const draftKey = computed(() => {
@@ -51,6 +57,7 @@ export function useStudentServices(emit: {
       return availableDomains.value.filter((domain) => openDomainIds.value?.includes(domain.value))
     }
     const initial =
+      availableDomains.value.find((domain) => domain.value === snapshot.value?.domainId) ??
       availableDomains.value.find((domain) => domain.recommended) ??
       (accessibleDomainCount.value === 1 ? availableDomains.value[0] : undefined)
     return initial ? [initial] : []
@@ -74,10 +81,19 @@ export function useStudentServices(emit: {
       .filter((group) => group.services.length),
   )
   const selectedServices = computed(() => selectedGroups.value.flatMap((group) => group.services))
+  // A replacement PUT cannot preserve a specialty outside the V1 catalogue.
+  // Keep these account entries and their prices intact while editing a device draft.
+  const retainedServices = computed(
+    () =>
+      snapshot.value?.selected.filter(
+        (item) => !catalogue.value.some((entry) => entry.id === item.id),
+      ) ?? [],
+  )
   const removals = computed(
     () =>
       snapshot.value?.selected.filter(
         (saved) =>
+          !retainedServices.value.includes(saved) &&
           !selectedServices.value.some(
             (item) => item.id === saved.id && item.domainId === saved.domainId,
           ),
@@ -88,7 +104,8 @@ export function useStudentServices(emit: {
     if (!draft)
       return (
         removals.value.length > 0 ||
-        selectedServices.value.length !== (snapshot.value?.selected.length ?? 0)
+        selectedServices.value.length + retainedServices.value.length !==
+          (snapshot.value?.selected.length ?? 0)
       )
     return (
       draft.groups.length !== selectedGroups.value.length ||
@@ -109,6 +126,7 @@ export function useStudentServices(emit: {
   const canSaveOnAccount = computed(
     () =>
       !!snapshot.value?.revision &&
+      !retainedServices.value.length &&
       selectedGroups.value.length === 1 &&
       selectedServices.value.every((item) =>
         snapshot.value?.eligible.some(
@@ -116,11 +134,16 @@ export function useStudentServices(emit: {
         ),
       ),
   )
-  const canSave = computed(() => valid.value && (canSaveOnAccount.value || !!draftKey.value))
+  const canSave = computed(
+    () =>
+      catalogueState.value === 'ready' &&
+      valid.value &&
+      (canSaveOnAccount.value || !!draftKey.value),
+  )
   // Both independent reads must finish before validating a stored choice against the current offer.
   let checkedDeviceDraft = false
   watch([draftKey, snapshot, catalogueState], ([key, data, catalogueStatus]) => {
-    if (checkedDeviceDraft || !key || !data || catalogueStatus === 'loading') return
+    if (checkedDeviceDraft || !key || !data || catalogueStatus !== 'ready') return
     checkedDeviceDraft = true
     if (edited.value) return
     try {
@@ -146,10 +169,7 @@ export function useStudentServices(emit: {
   function useSnapshot(data: IServiceSelectionDto) {
     deviceDraft.value = undefined
     snapshot.value = data
-    openDomainIds.value =
-      data.domainId && data.eligible.some((item) => item.domainId === data.domainId)
-        ? [data.domainId]
-        : undefined
+    openDomainIds.value = undefined
     emit('restored', hasSavedSelection(data))
     ids.value = data.selected
       .filter(
@@ -215,6 +235,7 @@ export function useStudentServices(emit: {
   }
   function toggle(id: string, checked: boolean) {
     if (
+      catalogueState.value !== 'ready' ||
       saving.value ||
       !openDomains.value.some((group) => group.services.some((item) => item.id === id))
     )
@@ -326,6 +347,8 @@ export function useStudentServices(emit: {
     allDomainsVisible,
     ids,
     removals,
+    retainedServices,
+    retryCatalogue,
     valid,
     canSave,
     canSaveOnAccount,

@@ -8,7 +8,11 @@ import { createAppRouter } from '@/router'
 import { ApiError } from '@/shared/api/apiClient'
 
 enableAutoUnmount(afterEach)
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  sessionStorage.clear()
+  localStorage.clear()
+})
 
 it('opens services as the second step after saving studies and lets the student try suggestions for the saved education', async () => {
   const pinia = createPinia()
@@ -104,4 +108,18 @@ it('opens services as the second step after saving studies and lets the student 
   expect(wrapper.get('button[type=submit]').attributes('disabled')).toBeDefined()
   expect(wrapper.text()).not.toContain('Votre brouillon est enregistré sur cet appareil.')
   expect(reads.mock.calls.every(([, init]) => !init?.method || init.method === 'GET')).toBe(true)
+  // Refresh the services URL in the same tab after the backend returns two current records.
+  const url = router.currentRoute.value.fullPath
+  wrapper.unmount()
+  const refreshedRouter = createAppRouter(createMemoryHistory(), pinia)
+  await refreshedRouter.push(url)
+  const refreshed = mount(RouterView, { global: { plugins: [pinia, refreshedRouter] } })
+  await vi.waitFor(() =>
+    expect(refreshed.get('input[aria-label="Aperçu du parcours"]').element).toHaveProperty(
+      'checked',
+      true,
+    ),
+  )
+  expect(refreshed.text()).toContain('MBA Full-stack')
+  expect(refreshed.text()).not.toContain('Autre cursus')
 })

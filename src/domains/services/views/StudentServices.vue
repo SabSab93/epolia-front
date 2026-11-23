@@ -75,6 +75,7 @@
         :state="catalogueState"
         :empty="!options.length"
         :has-available-domain="hasAvailableDomain"
+        @retry="retryCatalogue"
       />
     </div>
     <ServiceSpecialties
@@ -86,9 +87,18 @@
       :services="group.services"
       :selected-ids="ids"
       :recommended-ids="recommendedIds"
-      :disabled="saving"
+      :disabled="saving || catalogueState !== 'ready'"
       @toggle="toggle"
     />
+    <section
+      v-if="catalogueState === 'ready' && retainedServices.length"
+      aria-label="Prestations conservées"
+    >
+      <p>Prestations déjà enregistrées sur votre compte</p>
+      <ul class="list-inside list-disc">
+        <li v-for="item in retainedServices" :key="item.id">{{ item.label }}</li>
+      </ul>
+    </section>
     <section
       v-if="removals.length && (canSaveOnAccount || !valid) && snapshot.revision"
       class="flex flex-col gap-epolia-xs"
@@ -102,7 +112,7 @@
         <li v-for="item in removals" :key="item.id">{{ item.label }}</li>
       </ul>
     </section>
-    <p v-if="valid && !canSave && catalogueState !== 'loading'" role="status">
+    <p v-if="valid && !canSave && catalogueState === 'ready'" role="status">
       Votre compte ou votre formation n’a pas pu être identifié. Rouvrez l’étape pour enregistrer
       vos choix.
     </p>
@@ -113,10 +123,11 @@
       announcement="polite"
       message="Vos choix sont enregistrés dans votre brouillon."
     />
+    <span class="sr-only" role="status">{{ localSaved ? 'Brouillon enregistré' : '' }}</span>
     <BaseButton
       v-if="hasAvailableDomain"
       type="submit"
-      label="Enregistrer mes choix"
+      :label="localSaved && !canSaveOnAccount ? 'Brouillon enregistré' : 'Enregistrer mes choix'"
       :loading="saving"
       :disabled="!canSave || success || (localSaved && !canSaveOnAccount)"
     />
@@ -160,6 +171,8 @@ const {
   allDomainsVisible,
   ids,
   removals,
+  retainedServices,
+  retryCatalogue,
   valid,
   canSave,
   canSaveOnAccount,

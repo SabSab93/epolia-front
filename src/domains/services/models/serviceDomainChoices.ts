@@ -20,15 +20,13 @@ export function serviceDomainChoices(
   }
 
   const domains = selection?.domains ?? []
-  for (const item of eligible.values()) {
-    const domain = domains.find((d) => d.id === item.domainId)
-    if (domain) add(domain.id, domain.label, item)
-  }
   for (const item of catalogue) {
-    if (eligible.has(item.id)) continue
-    const domain = domains.find((d) => d.label === item.family)
+    const serverService = eligible.get(item.id)
+    const domain = serverService
+      ? domains.find((d) => d.id === serverService.domainId)
+      : domains.find((d) => d.label === item.family)
     const domainId = domain?.id ?? 'catalogue:' + item.family
-    add(domainId, item.family, { id: item.id, label: item.label, domainId })
+    add(domainId, domain?.label ?? item.family, { id: item.id, label: item.label, domainId })
   }
 
   const choices = [...groups.values()].map((group) => {
