@@ -56,11 +56,11 @@ it('keeps keyboard focus when a slow studies request finishes and advances only 
   const draft = deferred<Response>()
   const { wrapper, router, requests } = await open('student-studies', () => draft.promise)
   expect(document.activeElement).toBe(wrapper.get('h1').element)
-  const back = wrapper.get<HTMLAnchorElement>('header a')
-  back.element.focus()
+  expect(wrapper.find('header a').exists()).toBe(false)
+  expect(wrapper.find('summary').exists()).toBe(false)
   draft.resolve(Response.json([education]))
   await flushPromises()
-  expect(document.activeElement).toBe(back.element)
+  expect(document.activeElement).toBe(wrapper.get('h1').element)
   expect(wrapper.get('[aria-current="step"]').text()).not.toContain('Terminée')
   expect(requests).toHaveBeenCalledTimes(1)
   await wrapper.get('input[type="date"]').setValue('2026-09-01')
@@ -76,7 +76,9 @@ it('keeps keyboard focus when a slow studies request finishes and advances only 
   expect(document.activeElement).toBe(wrapper.get('h1').element)
   expect(wrapper.get('[role="group"] [aria-live="polite"]').text()).toBe('2/2')
   expect(requests).toHaveBeenCalledTimes(2)
-  requests.mockResolvedValueOnce(Response.json([updated]))
+  requests.mockResolvedValueOnce(
+    Response.json([{ ...updated, id: 'other', school: 'Autre école' }, updated]),
+  )
   await wrapper.get('header a').trigger('click')
   await vi.waitFor(() =>
     expect(wrapper.get<HTMLInputElement>('input[required]').element.value).toBe(updated.school),

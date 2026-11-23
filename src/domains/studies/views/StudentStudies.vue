@@ -1,5 +1,5 @@
 <template>
-  <div ref="intro" tabindex="-1" class="flex flex-col gap-epolia-xs outline-none">
+  <div class="flex flex-col gap-epolia-xs">
     <p class="text-epolia-body text-epolia-text-secondary">
       Choisissez votre établissement et votre formation pour compléter votre profil étudiant.
     </p>
@@ -13,24 +13,6 @@
     />
     <BaseButton variant="secondary" label="Réessayer" @click="load" />
   </div>
-  <section
-    v-else-if="page === 'list'"
-    ref="recordsPanel"
-    tabindex="-1"
-    class="flex flex-col gap-epolia-md"
-    aria-label="Vos formations enregistrées"
-  >
-    <BaseTitle level="h2">Vos formations enregistrées</BaseTitle>
-    <BaseSelect
-      label="Formation à modifier"
-      placeholder="Choisissez une formation enregistrée"
-      :model-value="''"
-      :options="recordOptions"
-      required
-      @update:model-value="edit"
-    />
-    <BaseButton label="Ajouter une formation" @click="edit()" />
-  </section>
   <section
     v-else-if="page === 'saved'"
     ref="savedPanel"
@@ -47,32 +29,20 @@
     <p class="text-epolia-body-small text-epolia-text-secondary">
       Vous pouvez modifier cette formation depuis votre parcours étudiant.
     </p>
-    <BaseButton label="Retrouver mes formations" variant="secondary" @click="chooseRecord" />
     <RouterLink
       :to="{ name: 'home' }"
       class="inline-flex min-h-12 items-center justify-center rounded-epolia px-epolia-md font-semibold text-epolia-primary underline focus-visible:outline-2"
       >Retour à l’accueil</RouterLink
     >
   </section>
-  <template v-else-if="page === 'form'">
-    <BaseButton
-      v-if="records.length"
-      variant="tertiary"
-      class="self-start px-0"
-      label="Gérer mes formations"
-      :disabled="busy"
-      @click="chooseRecord"
-    />
-    <StudentEducationForm
-      :key="selectedId || 'new'"
-      :education="current"
-      :reference="current ? recordReference(current) : undefined"
-      :offer-detail="current?.catalogOfferId ? offerDetails[current.catalogOfferId] : undefined"
-      @saved="onSaved"
-      @busy="busy = $event"
-      @dirty="dirty = $event"
-    />
-  </template>
+  <StudentEducationForm
+    v-else-if="page === 'form'"
+    :education="current"
+    :offer-detail="offerDetail"
+    @saved="onSaved"
+    @busy="busy = $event"
+    @dirty="dirty = $event"
+  />
 </template>
 
 <script setup lang="ts">
@@ -82,23 +52,11 @@ import { useStudentStudies } from '@/domains/studies/composables/useStudentStudi
 import BaseAlert from '@/shared/components/BaseAlert.vue'
 import BaseButton from '@/shared/components/BaseButton.vue'
 import BaseLoader from '@/shared/components/BaseLoader.vue'
-import BaseSelect from '@/shared/components/BaseSelect.vue'
-import BaseTitle from '@/shared/components/BaseTitle.vue'
 
-const emit = defineEmits<{ saved: []; restored: [saved: boolean] }>()
-const {
-  records,
-  page,
-  current,
-  selectedId,
-  busy,
-  dirty,
-  edit,
-  chooseRecord,
-  onSaved,
-  load,
-  recordOptions,
-  recordReference,
-  offerDetails,
-} = useStudentStudies(emit)
+const props = defineProps<{ resumeRecordId?: string }>()
+const emit = defineEmits<{ saved: [recordId: string]; restored: [saved: boolean] }>()
+const { current, page, busy, dirty, offerDetail, onSaved, load } = useStudentStudies(
+  emit,
+  props.resumeRecordId,
+)
 </script>

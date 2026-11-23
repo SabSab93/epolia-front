@@ -1,15 +1,22 @@
+import type { InjectionKey, Ref } from 'vue'
+import { hasSavedSelection, loadServiceSelection } from '@/domains/services/api/serviceSelectionApi'
 import type { LocationQuery } from 'vue-router'
-import { studentStudiesView } from '@/domains/onboarding/studentViews'
+import { studentServicesView, studentStudiesView } from '@/domains/onboarding/studentViews'
 import { hasSavedEducation } from '@/domains/studies/api/studiesApi'
 
-// Register a screen here when its form is integrated. Its position supplies the
-// step number; links and saved data use the stable id instead.
 export const studentSteps = [
   {
     id: 'studies',
     title: 'Vos études',
     component: studentStudiesView,
     hasSavedData: hasSavedEducation,
+  },
+  {
+    id: 'services',
+    title: 'Que proposez-vous ?',
+    component: studentServicesView,
+    hasSavedData: async (signal: AbortSignal) =>
+      hasSavedSelection(await loadServiceSelection(signal)),
   },
 ] as const
 
@@ -24,3 +31,6 @@ export function firstStudentStepDestination() {
 export function isStudentReplay(query: LocationQuery) {
   return import.meta.env.DEV && query.recommencer === '1'
 }
+
+export const savedStepRecordsKey: InjectionKey<Readonly<Ref<Record<string, string | undefined>>>> =
+  Symbol('savedStepRecords')

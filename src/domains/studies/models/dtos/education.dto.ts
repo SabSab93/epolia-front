@@ -23,6 +23,10 @@ export interface ICandidateDto {
   description: string
 }
 
+export interface IServiceCatalogueEntryDto extends ICandidateDto {
+  family: string
+}
+
 export interface IEducationDto {
   studyField?: { id: string; label: string } | null
   id: string

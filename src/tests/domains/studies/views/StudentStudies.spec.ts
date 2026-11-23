@@ -185,7 +185,7 @@ it('clears the previous course when the school search changes', async () => {
   expect(api.createEducation).not.toHaveBeenCalled()
 })
 
-it('requires an explicit choice among existing records and preserves an older unlinked declaration', async () => {
+it('opens the first available draft when no current education exists and preserves its legacy fields', async () => {
   const old = {
     ...stored,
     id: 'old',
@@ -195,11 +195,10 @@ it('requires an explicit choice among existing records and preserves an older un
     catalogCampusId: null,
     title: 'Formation historique',
   }
-  vi.mocked(api.listEducations).mockResolvedValue([stored, old])
+  vi.mocked(api.listEducations).mockResolvedValue([old, stored])
   vi.mocked(api.updateEducation).mockResolvedValue({ ...old, endDate: '2028-06-01' })
   await open()
-  expect(wrapper.find('form').exists()).toBe(false)
-  await chooseOption(old.id)
+  expect(wrapper.find('form').exists()).toBe(true)
   expect(api.getOfferCandidates).not.toHaveBeenCalled()
   expect(wrapper.text()).not.toContain('Réf.')
   await wrapper.get('input[type="date"][required]').setValue('2026-09-01')
@@ -277,7 +276,7 @@ it('protects an unfinished new search and campus selection when leaving the form
   }
 })
 
-it('keeps homonymous declarations distinguishable at resume and moves focus after each change of screen', async () => {
+it('resumes the current education directly and preserves focus when switching form modes', async () => {
   const secondOffer = { ...mba, id: 'mba-2', detail: '1 an' }
   const second = {
     ...stored,
@@ -290,15 +289,9 @@ it('keeps homonymous declarations distinguishable at resume and moves focus afte
   vi.mocked(api.getCampusOffers).mockResolvedValue([mba, secondOffer])
   vi.mocked(api.updateEducation).mockResolvedValue(second)
   await open()
-  const pick = wrapper
-    .getComponent(BaseSelect)
-    .props('options')
-    .find((item) => item.value === second.id)
-  expect(pick?.label).toContain('ens · mba-2')
-  expect(pick?.label).toContain('1 an')
-  await chooseOption(second.id)
+  expect(wrapper.text()).not.toContain('Ajouter une formation')
+  expect(wrapper.text()).not.toContain('Formation à modifier')
   expect(wrapper.text()).toContain('Famille d’études · Informatique')
-  expect(wrapper.text()).toContain('ens · mba-2')
   expect(wrapper.text()).toContain('1 an')
   await button('Saisir ma formation manuellement').trigger('click')
   expect(document.activeElement).toBe(wrapper.find('input').element)
@@ -308,10 +301,6 @@ it('keeps homonymous declarations distinguishable at resume and moves focus afte
   await wrapper.get('form').trigger('submit')
   await flushPromises()
   expect(document.activeElement).toBe(wrapper.get('section[aria-label="Confirmation"]').element)
-  await button('Retrouver mes formations').trigger('click')
-  expect(document.activeElement).toBe(
-    wrapper.get('section[aria-label="Vos formations enregistrées"]').element,
-  )
 })
 
 it('opens a blank manual form and restores saved values only on explicit request', async () => {
