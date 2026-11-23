@@ -7,6 +7,7 @@ import type {
   IEducationDto,
   IEducationInputDto,
   IOfferDto,
+  IServiceCatalogueEntryDto,
 } from '@/domains/studies/models/dtos/education.dto'
 import { ApiError, apiFetch } from '@/shared/api/apiClient'
 
@@ -48,6 +49,9 @@ function isCandidate(value: unknown): value is ICandidateDto {
     typeof value.label === 'string' &&
     typeof value.description === 'string'
   )
+}
+function isCatalogueEntry(value: unknown): value is IServiceCatalogueEntryDto {
+  return isCandidate(value) && 'family' in value && typeof value.family === 'string'
 }
 function isEducation(value: unknown): value is IEducationDto {
   return (
@@ -96,6 +100,11 @@ export async function getOfferCandidates(offerId: string, signal?: AbortSignal) 
   const value: unknown = await response.json()
   if (!record(value) || value.offerId !== offerId) throw invalid()
   return list(value.candidates, isCandidate)
+}
+
+export async function getServiceCatalogue(signal: AbortSignal) {
+  const response = await apiFetch(directory + '/candidates', { signal })
+  return list(await response.json(), isCatalogueEntry)
 }
 
 function missingDraft(error: unknown) {
