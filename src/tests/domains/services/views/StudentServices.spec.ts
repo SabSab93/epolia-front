@@ -530,3 +530,24 @@ it.each(['catalogue', 'études', 'recommandations'])(
     )
   },
 )
+
+it('clears an education that disappeared while retrying its recommendations', async () => {
+  vi.mocked(listEducations).mockResolvedValueOnce([education]).mockResolvedValueOnce([])
+  vi.mocked(getOfferCandidates).mockRejectedValueOnce(new Error('offline'))
+  vi.mocked(api.loadServiceSelection).mockResolvedValue({
+    ...initial,
+    revision: null,
+    eligible: [],
+    selected: [],
+  })
+  const wrapper = await open()
+  expect(wrapper.text()).toContain(education.title)
+  await wrapper
+    .findAll('button')
+    .find((button) => button.text() === 'Réessayer')!
+    .trigger('click')
+  await flushPromises()
+  expect(wrapper.text()).not.toContain(education.title)
+  expect(getOfferCandidates).toHaveBeenCalledTimes(1)
+  expect(wrapper.find('button[type=submit]').exists()).toBe(false)
+})

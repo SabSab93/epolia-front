@@ -27,10 +27,11 @@ export function useStudyServicePreview() {
     const education = savedId
       ? records.find((row) => row.id === savedId)
       : records.find(isCompleteCurrentEducation)
-    if (!education || !isCompleteCurrentEducation(education)) return
-    study.value = education
-    if (education.source !== 'CATALOG' || !education.catalogOfferId) return
-    const rows = await getOfferCandidates(education.catalogOfferId, signal)
+    const current = education && isCompleteCurrentEducation(education) ? education : undefined
+    study.value = current
+    recommendedIds.value = []
+    if (current?.source !== 'CATALOG' || !current.catalogOfferId) return
+    const rows = await getOfferCandidates(current.catalogOfferId, signal)
     if (!signal.aborted) recommendedIds.value = rows.map((row) => row.id)
   }
 
